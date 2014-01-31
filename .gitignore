@@ -1,2 +1,15 @@
 .DS_Store
 *.swp
+
+# Gradle
+*/build/
+.gradle/
+
+# Intellij project files
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Android
+local.properties

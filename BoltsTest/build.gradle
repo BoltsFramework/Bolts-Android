@@ -1,0 +1,21 @@
+apply plugin: 'android'
+
+dependencies {
+    compile project(':Bolts')
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.1"
+
+        sourceSets {
+            main {
+                manifest.srcFile 'AndroidManifest.xml'
+                resources.srcDirs = ['src']
+                res.srcDirs = ['res']
+            }
+            instrumentTest {
+                java.srcDirs = ['src']
+            }
+        }
+}
