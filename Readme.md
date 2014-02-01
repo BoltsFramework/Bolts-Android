@@ -305,7 +305,7 @@ fetchAsync(object).continueWith(new Continuation<ParseObject, Void>() {
 
 ## Capturing Variables
 
-One difficult in breaking up code across multiple callbacks is that they have different variable scopes. Java allows functions to "capture" variables from outer scopes, but only if they are marked as `final`, making them immutable. This is inconvenient. That's why we've added another convenience class called `Capture`, which lets you share a mutable variable with your callbacks. Just call `get` and `set` on the variable to change its value.
+One difficulty in breaking up code across multiple callbacks is that they have different variable scopes. Java allows functions to "capture" variables from outer scopes, but only if they are marked as `final`, making them immutable. This is inconvenient. That's why we've added another convenience class called `Capture`, which lets you share a mutable variable with your callbacks. Just call `get` and `set` on the variable to change its value.
 
 ```java
 // Capture a variable to be modified in the Task callbacks.
