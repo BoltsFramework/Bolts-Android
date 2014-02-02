@@ -229,7 +229,7 @@ public class TaskTest extends InstrumentationTestCase {
 
   public void testWhenAllOneError() {
     final Exception error = new RuntimeException("This task failed.");
-    
+
     runTaskTest(new Callable<Task<?>>() {
       @Override
       public Task<?> call() throws Exception {
@@ -257,7 +257,7 @@ public class TaskTest extends InstrumentationTestCase {
 
             assertFalse(task.getError() instanceof AggregateException);
             assertEquals(error, task.getError());
-            
+
             for (Task<Void> t : tasks) {
               assertTrue(t.isCompleted());
             }
@@ -270,7 +270,7 @@ public class TaskTest extends InstrumentationTestCase {
 
   public void testWhenAllTwoErrors() {
     final Exception error = new RuntimeException("This task failed.");
-    
+
     runTaskTest(new Callable<Task<?>>() {
       @Override
       public Task<?> call() throws Exception {
@@ -297,9 +297,9 @@ public class TaskTest extends InstrumentationTestCase {
             assertFalse(task.isCancelled());
 
             assertTrue(task.getError() instanceof AggregateException);
-            assertEquals(2, ((AggregateException)task.getError()).getErrors().size());
-            assertEquals(error, ((AggregateException)task.getError()).getErrors().get(0));
-            assertEquals(error, ((AggregateException)task.getError()).getErrors().get(1));
+            assertEquals(2, ((AggregateException) task.getError()).getErrors().size());
+            assertEquals(error, ((AggregateException) task.getError()).getErrors().get(0));
+            assertEquals(error, ((AggregateException) task.getError()).getErrors().get(1));
 
             for (Task<Void> t : tasks) {
               assertTrue(t.isCompleted());
