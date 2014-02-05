@@ -18,13 +18,13 @@ public class AggregateException extends Exception {
   private static final long serialVersionUID = 1L;
 
   private List<Exception> errors;
-  
+
   public AggregateException(List<Exception> errors) {
     super("There were multiple errors.");
-    
+
     this.errors = errors;
   }
-  
+
   /**
    * Returns the list of errors that this exception encapsulates.
    */

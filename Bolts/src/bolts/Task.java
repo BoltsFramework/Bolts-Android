@@ -273,11 +273,11 @@ public class Task<TResult> {
               errors.add(task.getError());
             }
           }
-          
+
           if (task.isCancelled()) {
             isCancelled.set(true);
           }
-          
+
           if (count.decrementAndGet() == 0) {
             if (errors.size() != 0) {
               if (errors.size() == 1) {
@@ -295,7 +295,7 @@ public class Task<TResult> {
         }
       });
     }
-    
+
     return allFinished.getTask();
   }
 
@@ -314,8 +314,7 @@ public class Task<TResult> {
    */
   public Task<Void> continueWhile(final Callable<Boolean> predicate,
       final Continuation<Void, Task<Void>> continuation, final Executor executor) {
-    final Capture<Continuation<Void, Task<Void>>> predicateContinuation =
-        new Capture<Continuation<Void, Task<Void>>>();
+    final Capture<Continuation<Void, Task<Void>>> predicateContinuation = new Capture<Continuation<Void, Task<Void>>>();
     predicateContinuation.set(new Continuation<Void, Task<Void>>() {
       public Task<Void> then(Task<Void> task) throws Exception {
         if (predicate.call()) {
