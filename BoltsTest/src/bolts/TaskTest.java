@@ -10,6 +10,8 @@
 package bolts;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
@@ -18,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import bolts.AggregateException;
 import bolts.Continuation;
 import bolts.Task;
+import bolts.Task.AggregateResult;
 
 import android.test.InstrumentationTestCase;
 
@@ -36,6 +39,7 @@ public class TaskTest extends InstrumentationTestCase {
         throw new RuntimeException(new CancellationException());
       }
     } catch (Exception e) {
+      e.printStackTrace();
       throw new RuntimeException(e);
     }
   }
@@ -199,26 +203,34 @@ public class TaskTest extends InstrumentationTestCase {
     runTaskTest(new Callable<Task<?>>() {
       @Override
       public Task<?> call() throws Exception {
-        final ArrayList<Task<Void>> tasks = new ArrayList<Task<Void>>();
+        final ArrayList<Task<Integer>> tasks = new ArrayList<Task<Integer>>();
         for (int i = 0; i < 20; i++) {
-          Task<Void> task = Task.callInBackground(new Callable<Void>() {
+          final int result = i;
+          Task<Integer> task = Task.callInBackground(new Callable<Integer>() {
             @Override
-            public Void call() throws Exception {
+            public Integer call() throws Exception {
               Thread.sleep((long) (Math.random() * 1000));
-              return null;
+              return result;
             }
           });
           tasks.add(task);
         }
-        return Task.whenAll(tasks).continueWith(new Continuation<Void, Void>() {
+        return Task.whenAll(tasks).continueWith(new Continuation<AggregateResult, Void>() {
           @Override
-          public Void then(Task<Void> task) {
+          public Void then(Task<AggregateResult> task) {
             assertTrue(task.isCompleted());
             assertFalse(task.isFaulted());
             assertFalse(task.isCancelled());
 
-            for (Task<Void> t : tasks) {
+            for (Task<Integer> t : tasks) {
               assertTrue(t.isCompleted());
+            }
+            Collection<Object> results = task.getResult().getResults();
+            assertEquals(results.size(), tasks.size());
+            int counter = 0;
+            for (Object result : results) {
+              Integer r = (Integer) result;
+              assertEquals(r.intValue(), counter++);
             }
             return null;
           }
@@ -233,24 +245,24 @@ public class TaskTest extends InstrumentationTestCase {
     runTaskTest(new Callable<Task<?>>() {
       @Override
       public Task<?> call() throws Exception {
-        final ArrayList<Task<Void>> tasks = new ArrayList<Task<Void>>();
+        final ArrayList<Task<Integer>> tasks = new ArrayList<Task<Integer>>();
         for (int i = 0; i < 20; i++) {
           final int number = i;
-          Task<Void> task = Task.callInBackground(new Callable<Void>() {
+          Task<Integer> task = Task.callInBackground(new Callable<Integer>() {
             @Override
-            public Void call() throws Exception {
+            public Integer call() throws Exception {
               Thread.sleep((long) (Math.random() * 1000));
               if (number == 10) {
                 throw error;
               }
-              return null;
+              return number;
             }
           });
           tasks.add(task);
         }
-        return Task.whenAll(tasks).continueWith(new Continuation<Void, Void>() {
+        return Task.whenAll(tasks).continueWith(new Continuation<AggregateResult, Void>() {
           @Override
-          public Void then(Task<Void> task) {
+          public Void then(Task<AggregateResult> task) {
             assertTrue(task.isCompleted());
             assertTrue(task.isFaulted());
             assertFalse(task.isCancelled());
@@ -258,9 +270,10 @@ public class TaskTest extends InstrumentationTestCase {
             assertFalse(task.getError() instanceof AggregateException);
             assertEquals(error, task.getError());
 
-            for (Task<Void> t : tasks) {
+            for (Task<Integer> t : tasks) {
               assertTrue(t.isCompleted());
             }
+            assertNull(task.getResult());
             return null;
           }
         });
@@ -289,12 +302,13 @@ public class TaskTest extends InstrumentationTestCase {
           });
           tasks.add(task);
         }
-        return Task.whenAll(tasks).continueWith(new Continuation<Void, Void>() {
+        return Task.whenAll(tasks).continueWith(new Continuation<AggregateResult, Void>() {
           @Override
-          public Void then(Task<Void> task) {
+          public Void then(Task<AggregateResult> task) {
             assertTrue(task.isCompleted());
             assertTrue(task.isFaulted());
             assertFalse(task.isCancelled());
+            assertNull(task.getResult());
 
             assertTrue(task.getError() instanceof AggregateException);
             assertEquals(2, ((AggregateException) task.getError()).getErrors().size());
@@ -335,9 +349,9 @@ public class TaskTest extends InstrumentationTestCase {
 
           tasks.add(tcs.getTask());
         }
-        return Task.whenAll(tasks).continueWith(new Continuation<Void, Void>() {
+        return Task.whenAll(tasks).continueWith(new Continuation<AggregateResult, Void>() {
           @Override
-          public Void then(Task<Void> task) {
+          public Void then(Task<AggregateResult> task) {
             assertTrue(task.isCompleted());
             assertFalse(task.isFaulted());
             assertTrue(task.isCancelled());

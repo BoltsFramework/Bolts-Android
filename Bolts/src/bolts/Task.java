@@ -12,6 +12,7 @@ package bolts;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -251,18 +252,21 @@ public class Task<TResult> {
   /**
    * Creates a task that completes when all of the provided tasks are complete.
    */
-  public static Task<Void> whenAll(Collection<? extends Task<?>> tasks) {
+  public static Task<AggregateResult> whenAll(Collection<? extends Task<?>> tasks) {
     if (tasks.size() == 0) {
       return Task.forResult(null);
     }
-
-    final Task<Void>.TaskCompletionSource allFinished = Task.<Void> create();
+    final Task<AggregateResult>.TaskCompletionSource allFinished = Task.<AggregateResult> create();
     final ArrayList<Exception> errors = new ArrayList<Exception>();
+    final TreeMap<Integer, Object> results = new TreeMap<Integer, Object>();
     final Object errorLock = new Object();
+    final Object resultLock = new Object();
     final AtomicInteger count = new AtomicInteger(tasks.size());
     final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
+    int taskIdx = 0;
     for (Task<?> task : tasks) {
+      final int id = taskIdx++; 
       @SuppressWarnings("unchecked")
       Task<Object> t = (Task<Object>) task;
       t.continueWith(new Continuation<Object, Void>() {
@@ -277,6 +281,11 @@ public class Task<TResult> {
           if (task.isCancelled()) {
             isCancelled.set(true);
           }
+          if (task.isCompleted()) {
+            synchronized (resultLock) {
+              results.put(id, task.result);
+            }
+          }
 
           if (count.decrementAndGet() == 0) {
             if (errors.size() != 0) {
@@ -288,7 +297,7 @@ public class Task<TResult> {
             } else if (isCancelled.get()) {
               allFinished.setCancelled();
             } else {
-              allFinished.setResult(null);
+              allFinished.setResult(new AggregateResult(results.values()));
             }
           }
           return null;
@@ -635,6 +644,18 @@ public class Task<TResult> {
       if (!trySetError(error)) {
         throw new IllegalStateException("Cannot set the error on a completed task.");
       }
+    }
+  }
+  
+  public static class AggregateResult {
+    private final Collection<Object> mResults;
+
+    public AggregateResult(Collection<Object> collection) {
+      mResults = collection;
+    }
+
+    public Collection<Object> getResults() {
+      return mResults;
     }
   }
 }
