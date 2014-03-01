@@ -181,7 +181,7 @@ public class Task<TResult> {
   }
 
   /**
-   * Creates a cancelled task with the given error.
+   * Creates a cancelled task.
    */
   public static <TResult> Task<TResult> cancelled() {
     Task<TResult>.TaskCompletionSource tcs = Task.<TResult> create();
