@@ -19,6 +19,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import android.os.Handler;
+import android.os.Looper;
+
 /**
  * Represents the result of an asynchronous operation.
  * 
@@ -82,6 +85,11 @@ public class Task<TResult> {
         decrementDepth();
       }
     }
+  };
+  private static final Executor uiThreadExecutor = new Executor() {
+    public void execute(Runnable runnable) {
+      new Handler(Looper.getMainLooper()).post(runnable);
+    };
   };
   private final Object lock = new Object();
   private boolean complete;
@@ -363,6 +371,15 @@ public class Task<TResult> {
   }
 
   /**
+   * Adds a synchronous continuation to this task, returning a new task that completes after the
+   * continuation has finished running.
+   */
+  public <TContinuationResult> Task<TContinuationResult> continueOnUiThreadWith(
+      Continuation<TResult, TContinuationResult> continuation) {
+    return continueWith(continuation, uiThreadExecutor);
+  }
+
+  /**
    * Adds an Task-based continuation to this task that will be scheduled using the executor,
    * returning a new task that completes after the task returned by the continuation has completed.
    */
@@ -422,6 +439,15 @@ public class Task<TResult> {
   public <TContinuationResult> Task<TContinuationResult> onSuccess(
       final Continuation<TResult, TContinuationResult> continuation) {
     return onSuccess(continuation, immediateExecutor);
+  }
+
+  /**
+   * Runs a continuation on the UI thread when a task completes successfully, forwarding
+   * along errors or cancellation.
+   */
+  public <TContinuationResult> Task<TContinuationResult> onSuccessOnUiThread(
+      final Continuation<TResult, TContinuationResult> continuation) {
+    return onSuccess(continuation, uiThreadExecutor);
   }
 
   /**
