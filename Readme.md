@@ -276,31 +276,46 @@ findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Void>() {
 
 ## Task Executors
 
-All of the `continueWith` and `onSuccess` methods can take an instance of `java.util.concurrent.Executor` as an optional second argument. This allows you to control how the continuation is executed. The default executor will use its own thread pool, but you can provide your own executor to schedule work onto a different thread. For example, if you want to continue with work on the UI thread:
+All of the `continueWith` and `onSuccess` methods can take an instance of `java.util.concurrent.Executor` as an optional second argument. This allows you to control how the continuation is executed. `Task.call()` invokes `Callable`s on the current thread and `Task.callInBackground` will use its own thread pool, but you can provide your own executor to schedule work onto a different thread. For example, if you want to do work on a specific thread pool:
 
 ```java
-import java.util.concurrent.Executor;
-import android.os.Handler;
-import android.os.Looper;
-
-// Add this member to your class.
-static Executor uiThreadExecutor = new Executor() {
-  public void execute(Runnable command) {
-    new Handler(Looper.getMainLooper()).post(command);
-  }
-};
+static final Executor NETWORK_EXECUTOR = Executors.newCachedThreadPool();
+static final Executor DISK_EXECUTOR = Executors.newCachedThreadPool();
 ```
 
 ```java
-// And use the uiThreadExecutor like this. The executor applies only to the new
-// continuation being passed into continueWith.
+final Request request = ...
+Task.call(new Callable<HttpResponse>() {
+  @Override
+  public HttpResponse call() throws Exception {
+    // Work is specified to be done on NETWORK_EXECUTOR
+    return client.execute(request);
+  }
+}, NETWORK_EXECUTOR).continueWithTask(new Continuation<HttpResponse, Task<byte[]>>() {
+  @Override
+  public Task<byte[]> then(Task<HttpResponse> task) throws Exception {
+    // Since no executor is specified, it's continued on NETWORK_EXECUTOR
+    return processResponseAsync(response);
+  }
+}).continueWithTask(new Continuation<byte[], Task<Void>>() {
+  @Override
+  public Task<Void> then(Task<byte[]> task) throws Exception {
+    // We don't want to clog NETWORK_EXECUTOR with disk I/O, so we specify to use DISK_EXECUTOR
+    return writeToDiskAsync(task.getResult());
+  }
+}, DISK_EXECUTOR);
+```
+
+For common cases, such as dispatching on the main thread, we have provided default implementations of Executor. These include `Task.UI_THREAD_EXECUTOR` and `Task.BACKGROUND_EXECUTOR`. For example:
+
+```java
 fetchAsync(object).continueWith(new Continuation<ParseObject, Void>() {
   public Void then(ParseObject object) throws Exception {
     TextView textView = (TextView)findViewById(R.id.name);
     textView.setText(object.get("name"));
     return null;
   }
-}, uiThreadExecutor);
+}, Task.UI_THREAD_EXECUTOR);
 ```
 
 ## Capturing Variables

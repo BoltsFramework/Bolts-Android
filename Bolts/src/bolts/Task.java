@@ -9,13 +9,15 @@
  */
 package bolts;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,63 +28,23 @@ import java.util.concurrent.atomic.AtomicInteger;
  *          The type of the result of the task.
  */
 public class Task<TResult> {
-  private static final ExecutorService backgroundExecutor = Executors.newCachedThreadPool();
   /**
-   * An executor that runs a runnable inline (rather than scheduling it on a thread pool) as long as
-   * the recursion depth is less than MAX_DEPTH. If the executor has recursed too deeply, it will
-   * instead delegate to the backgroundExecutor in order to trim the stack.
+   * An {@link java.util.concurrent.Executor} that executes tasks in parallel.
    */
-  private static final Executor immediateExecutor = new Executor() {
-    private static final int MAX_DEPTH = 15;
-    private ThreadLocal<Integer> executionDepth = new ThreadLocal<Integer>();
+  public static final ExecutorService BACKGROUND_EXECUTOR = Executors.newCachedThreadPool();
 
-    /**
-     * Increments the depth.
-     * 
-     * @return the new depth value.
-     */
-    private int incrementDepth() {
-      Integer oldDepth = executionDepth.get();
-      if (oldDepth == null) {
-        oldDepth = 0;
-      }
-      int newDepth = oldDepth.intValue() + 1;
-      executionDepth.set(newDepth);
-      return newDepth;
-    }
+  /**
+   * An {@link java.util.concurrent.Executor} that executes tasks in the current thread unless
+   * the stack runs too deep, at which point it will delegate to {@link Task#BACKGROUND_EXECUTOR} in
+   * order to trim the stack.
+   */
+  private static final Executor IMMEDIATE_EXECUTOR = new ImmediateExecutor();
 
-    /**
-     * Decrements the depth.
-     * 
-     * @return the new depth value.
-     */
-    private int decrementDepth() {
-      Integer oldDepth = executionDepth.get();
-      if (oldDepth == null) {
-        oldDepth = 0;
-      }
-      int newDepth = oldDepth.intValue() - 1;
-      if (newDepth == 0) {
-        executionDepth.remove();
-      } else {
-        executionDepth.set(newDepth);
-      }
-      return newDepth;
-    }
+  /**
+   * An {@link java.util.concurrent.Executor} that executes tasks on the UI thread.
+   */
+  public static final Executor UI_THREAD_EXECUTOR = new UIThreadExecutor();
 
-    public void execute(Runnable command) {
-      int depth = incrementDepth();
-      try {
-        if (depth <= MAX_DEPTH) {
-          command.run();
-        } else {
-          backgroundExecutor.execute(command);
-        }
-      } finally {
-        decrementDepth();
-      }
-    }
-  };
   private final Object lock = new Object();
   private boolean complete;
   private boolean cancelled;
@@ -97,7 +59,7 @@ public class Task<TResult> {
   /**
    * Creates a TaskCompletionSource that orchestrates a Task. This allows the creator of a task to
    * be solely responsible for its completion.
-   * 
+   *
    * @return A new TaskCompletionSource.
    */
   public static <TResult> Task<TResult>.TaskCompletionSource create() {
@@ -204,6 +166,7 @@ public class Task<TResult> {
    */
   public Task<Void> makeVoid() {
     return this.continueWithTask(new Continuation<TResult, Task<Void>>() {
+      @Override
       public Task<Void> then(Task<TResult> task) throws Exception {
         if (task.isCancelled()) {
           return Task.cancelled();
@@ -217,11 +180,10 @@ public class Task<TResult> {
   }
 
   /**
-   * Invokes the callable on a background thread using the default thread pool, returning a Task to
-   * represent the operation.
+   * Invokes the callable on a background thread, returning a Task to represent the operation.
    */
   public static <TResult> Task<TResult> callInBackground(Callable<TResult> callable) {
-    return call(callable, backgroundExecutor);
+    return call(callable, BACKGROUND_EXECUTOR);
   }
 
   /**
@@ -230,6 +192,7 @@ public class Task<TResult> {
   public static <TResult> Task<TResult> call(final Callable<TResult> callable, Executor executor) {
     final Task<TResult>.TaskCompletionSource tcs = Task.<TResult> create();
     executor.execute(new Runnable() {
+      @Override
       public void run() {
         try {
           tcs.setResult(callable.call());
@@ -245,7 +208,7 @@ public class Task<TResult> {
    * Invokes the callable on the current thread, producing a Task.
    */
   public static <TResult> Task<TResult> call(final Callable<TResult> callable) {
-    return call(callable, immediateExecutor);
+    return call(callable, IMMEDIATE_EXECUTOR);
   }
 
   /**
@@ -305,7 +268,7 @@ public class Task<TResult> {
    */
   public Task<Void> continueWhile(Callable<Boolean> predicate,
       Continuation<Void, Task<Void>> continuation) {
-    return continueWhile(predicate, continuation, immediateExecutor);
+    return continueWhile(predicate, continuation, IMMEDIATE_EXECUTOR);
   }
 
   /**
@@ -314,8 +277,10 @@ public class Task<TResult> {
    */
   public Task<Void> continueWhile(final Callable<Boolean> predicate,
       final Continuation<Void, Task<Void>> continuation, final Executor executor) {
-    final Capture<Continuation<Void, Task<Void>>> predicateContinuation = new Capture<Continuation<Void, Task<Void>>>();
+    final Capture<Continuation<Void, Task<Void>>> predicateContinuation =
+        new Capture<Continuation<Void, Task<Void>>>();
     predicateContinuation.set(new Continuation<Void, Task<Void>>() {
+      @Override
       public Task<Void> then(Task<Void> task) throws Exception {
         if (predicate.call()) {
           return Task.<Void> forResult(null).onSuccessTask(continuation, executor)
@@ -340,6 +305,7 @@ public class Task<TResult> {
       completed = this.isCompleted();
       if (!completed) {
         this.continuations.add(new Continuation<TResult, Void>() {
+          @Override
           public Void then(Task<TResult> task) {
             completeImmediately(tcs, continuation, task, executor);
             return null;
@@ -359,7 +325,7 @@ public class Task<TResult> {
    */
   public <TContinuationResult> Task<TContinuationResult> continueWith(
       Continuation<TResult, TContinuationResult> continuation) {
-    return continueWith(continuation, immediateExecutor);
+    return continueWith(continuation, IMMEDIATE_EXECUTOR);
   }
 
   /**
@@ -374,6 +340,7 @@ public class Task<TResult> {
       completed = this.isCompleted();
       if (!completed) {
         this.continuations.add(new Continuation<TResult, Void>() {
+          @Override
           public Void then(Task<TResult> task) {
             completeAfterTask(tcs, continuation, task, executor);
             return null;
@@ -393,7 +360,7 @@ public class Task<TResult> {
    */
   public <TContinuationResult> Task<TContinuationResult> continueWithTask(
       Continuation<TResult, Task<TContinuationResult>> continuation) {
-    return continueWithTask(continuation, immediateExecutor);
+    return continueWithTask(continuation, IMMEDIATE_EXECUTOR);
   }
 
   /**
@@ -403,6 +370,7 @@ public class Task<TResult> {
   public <TContinuationResult> Task<TContinuationResult> onSuccess(
       final Continuation<TResult, TContinuationResult> continuation, Executor executor) {
     return continueWithTask(new Continuation<TResult, Task<TContinuationResult>>() {
+      @Override
       public Task<TContinuationResult> then(Task<TResult> task) {
         if (task.isFaulted()) {
           return Task.<TContinuationResult> forError(task.getError());
@@ -421,7 +389,7 @@ public class Task<TResult> {
    */
   public <TContinuationResult> Task<TContinuationResult> onSuccess(
       final Continuation<TResult, TContinuationResult> continuation) {
-    return onSuccess(continuation, immediateExecutor);
+    return onSuccess(continuation, IMMEDIATE_EXECUTOR);
   }
 
   /**
@@ -431,6 +399,7 @@ public class Task<TResult> {
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
       final Continuation<TResult, Task<TContinuationResult>> continuation, Executor executor) {
     return continueWithTask(new Continuation<TResult, Task<TContinuationResult>>() {
+      @Override
       public Task<TContinuationResult> then(Task<TResult> task) {
         if (task.isFaulted()) {
           return Task.<TContinuationResult> forError(task.getError());
@@ -449,14 +418,14 @@ public class Task<TResult> {
    */
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
       final Continuation<TResult, Task<TContinuationResult>> continuation) {
-    return onSuccessTask(continuation, immediateExecutor);
+    return onSuccessTask(continuation, IMMEDIATE_EXECUTOR);
   }
 
   /**
    * Handles the non-async (i.e. the continuation doesn't return a Task) continuation case, passing
    * the results of the given Task through to the given continuation and using the results of that
    * call to set the result of the TaskContinuationSource.
-   * 
+   *
    * @param tcs
    *          The TaskContinuationSource that will be orchestrated by this call.
    * @param continuation
@@ -472,6 +441,7 @@ public class Task<TResult> {
       final Continuation<TResult, TContinuationResult> continuation, final Task<TResult> task,
       Executor executor) {
     executor.execute(new Runnable() {
+      @Override
       public void run() {
         try {
           TContinuationResult result = continuation.then(task);
@@ -488,7 +458,7 @@ public class Task<TResult> {
    * results of the given Task through to the given continuation to get a new Task. The
    * TaskCompletionSource's results are only set when the new Task has completed, unwrapping the
    * results of the task returned by the continuation.
-   * 
+   *
    * @param tcs
    *          The TaskContinuationSource that will be orchestrated by this call.
    * @param continuation
@@ -504,6 +474,7 @@ public class Task<TResult> {
       final Continuation<TResult, Task<TContinuationResult>> continuation,
       final Task<TResult> task, final Executor executor) {
     executor.execute(new Runnable() {
+      @Override
       public void run() {
         try {
           Task<TContinuationResult> result = continuation.then(task);
@@ -511,6 +482,7 @@ public class Task<TResult> {
             tcs.setResult(null);
           } else {
             result.continueWith(new Continuation<TContinuationResult, Void>() {
+              @Override
               public Void then(Task<TContinuationResult> task) {
                 if (task.isCancelled()) {
                   tcs.setCancelled();
@@ -637,4 +609,73 @@ public class Task<TResult> {
       }
     }
   }
+
+  /**
+   * An {@link java.util.concurrent.Executor} that runs tasks on the UI thread.
+   */
+  private static class UIThreadExecutor implements Executor {
+    @Override
+    public void execute(Runnable command) {
+      new Handler(Looper.getMainLooper()).post(command);
+    }
+  };
+
+  /**
+   * An {@link java.util.concurrent.Executor} that runs a runnable inline (rather than scheduling it
+   * on a thread pool) as long as the recursion depth is less than MAX_DEPTH. If the executor has
+   * recursed too deeply, it will instead delegate to the {@link Task#BACKGROUND_EXECUTOR} in order
+   * to trim the stack.
+   */
+  private static class ImmediateExecutor implements Executor {
+    private static final int MAX_DEPTH = 15;
+    private ThreadLocal<Integer> executionDepth = new ThreadLocal<Integer>();
+
+    /**
+     * Increments the depth.
+     *
+     * @return the new depth value.
+     */
+    private int incrementDepth() {
+      Integer oldDepth = executionDepth.get();
+      if (oldDepth == null) {
+        oldDepth = 0;
+      }
+      int newDepth = oldDepth + 1;
+      executionDepth.set(newDepth);
+      return newDepth;
+    }
+
+    /**
+     * Decrements the depth.
+     *
+     * @return the new depth value.
+     */
+    private int decrementDepth() {
+      Integer oldDepth = executionDepth.get();
+      if (oldDepth == null) {
+        oldDepth = 0;
+      }
+      int newDepth = oldDepth - 1;
+      if (newDepth == 0) {
+        executionDepth.remove();
+      } else {
+        executionDepth.set(newDepth);
+      }
+      return newDepth;
+    }
+
+    @Override
+    public void execute(Runnable command) {
+      int depth = incrementDepth();
+      try {
+        if (depth <= MAX_DEPTH) {
+          command.run();
+        } else {
+          BACKGROUND_EXECUTOR.execute(command);
+        }
+      } finally {
+        decrementDepth();
+      }
+    }
+  };
 }
