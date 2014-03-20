@@ -15,10 +15,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import bolts.AggregateException;
-import bolts.Continuation;
-import bolts.Task;
-
+import android.os.Looper;
 import android.test.InstrumentationTestCase;
 
 public class TaskTest extends InstrumentationTestCase {
@@ -93,6 +90,26 @@ public class TaskTest extends InstrumentationTestCase {
         assertTrue(cancelled.isCompleted());
         assertFalse(cancelled.isFaulted());
         assertTrue(cancelled.isCancelled());
+        return null;
+      }
+    });
+  }
+
+  public void testSynchronousUiContinuation() {
+    final Task<Integer> complete = Task.forResult(5);
+    final Task<Integer> completeOnUiThread = Task.forResult(5);
+    assertFalse(Looper.myLooper() == Looper.getMainLooper());
+
+    complete.continueWith(new Continuation<Integer, Void>() {
+      public Void then(Task<Integer> task) {
+        assertFalse(Looper.myLooper() == Looper.getMainLooper());
+        return null;
+      }
+    });
+
+    completeOnUiThread.continueOnUiThreadWith(new Continuation<Integer, Void>() {
+      public Void then(Task<Integer> task) {
+        assertTrue(Looper.myLooper() == Looper.getMainLooper());
         return null;
       }
     });
@@ -408,6 +425,20 @@ public class TaskTest extends InstrumentationTestCase {
     assertTrue(cancelled.isCompleted());
     assertFalse(cancelled.isFaulted());
     assertTrue(cancelled.isCancelled());
+  }
+
+  public void testOnSuccessOnUiThread() throws Exception {
+    assertFalse(Looper.myLooper() == Looper.getMainLooper());
+
+    Continuation<Boolean, Boolean> continuation = new Continuation<Boolean, Boolean>() {
+      public Boolean then(Task<Boolean> task) {
+        return Looper.myLooper() == Looper.getMainLooper();
+      }
+    };
+    Task<Boolean> complete = Task.forResult(Boolean.FALSE).onSuccessOnUiThread(continuation);
+
+    complete.waitForCompletion();
+    assertTrue(complete.getResult().booleanValue());
   }
 
   public void testOnSuccessTask() {

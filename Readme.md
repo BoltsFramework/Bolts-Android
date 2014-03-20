@@ -303,6 +303,32 @@ fetchAsync(object).continueWith(new Continuation<ParseObject, Void>() {
 }, uiThreadExecutor);
 ```
 
+## Running code on the UI thread
+
+It's easier to use `continueOnUiThreadWith` or `onSuccessonUiThread` to run code on the UI thread.
+
+```java
+// Using continueOnUiThreadWith forces the then method to get run on the UI thread.
+fetchAsync(object).continueOnUiThreadWith(new Continuation<ParseObject, Void>() {
+  public Void then(ParseObject object) throws Exception {
+    TextView textView = (TextView)findViewById(R.id.name);
+    textView.setText(object.get("name"));
+    return null;
+  }
+});
+```
+
+```java
+// Using onSuccessOnUiThread forces the then method to get run on the UI thread.
+fetchAsync(object).onSuccessOnUiThread(new Continuation<ParseObject, Void>() {
+  public Void then(ParseObject object) throws Exception {
+    TextView textView = (TextView)findViewById(R.id.name);
+    textView.setText(object.get("name"));
+    return null;
+  }
+});
+```
+
 ## Capturing Variables
 
 One difficulty in breaking up code across multiple callbacks is that they have different variable scopes. Java allows functions to "capture" variables from outer scopes, but only if they are marked as `final`, making them immutable. This is inconvenient. That's why we've added another convenience class called `Capture`, which lets you share a mutable variable with your callbacks. Just call `get` and `set` on the variable to change its value.
