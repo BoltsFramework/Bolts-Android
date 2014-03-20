@@ -5,17 +5,22 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.0.1"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
-        sourceSets {
-            main {
-                manifest.srcFile 'AndroidManifest.xml'
-                resources.srcDirs = ['src']
-                res.srcDirs = ['res']
-            }
-            instrumentTest {
-                java.srcDirs = ['src']
-            }
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            resources.srcDirs = ['src']
+            res.srcDirs = ['res']
         }
+        androidTest {
+            java.srcDirs = ['src']
+        }
+    }
 }
