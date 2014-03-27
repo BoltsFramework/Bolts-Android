@@ -12,6 +12,8 @@
         android:name="android.test.InstrumentationTestRunner"
         android:targetPackage="bolts.android" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
