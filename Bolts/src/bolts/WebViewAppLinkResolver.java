@@ -27,6 +27,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -94,15 +95,25 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
         webView.setWebViewClient(new WebViewClient() {
           private boolean loaded = false;
 
-          @Override
-          public void onLoadResource(WebView view, String url) {
-            super.onLoadResource(view, url);
+          private void runJavaScript(WebView view) {
             if (!loaded) {
               // After the first resource has been loaded (which will be the pre-populated data)
               // run the JavaScript meta tag extraction script
               loaded = true;
               view.loadUrl(TAG_EXTRACTION_JAVASCRIPT);
             }
+          }
+
+          @Override
+          public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            runJavaScript(view);
+          }
+
+          @Override
+          public void onLoadResource(WebView view, String url) {
+            super.onLoadResource(view, url);
+            runJavaScript(view);
           }
         });
         // Inject an object that will receive the JSON for the extracted JavaScript tags
@@ -191,6 +202,9 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
   private static AppLink makeAppLinkFromALData(Map<String, Object> appLinkDict, Uri destination) {
     List<AppLink.Target> targets = new ArrayList<AppLink.Target>();
     List<Map<String, Object>> platformMapList = (List<Map<String, Object>>) appLinkDict.get("android");
+    if (platformMapList == null) {
+      platformMapList = Collections.emptyList();
+    }
     for (Map<String, Object> platformMap : platformMapList) {
       // The schema requires a single url/package/app name/class, but we could find multiple
       // of them. We'll make a best effort to interpret this data.
@@ -210,14 +224,19 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
         targets.add(target);
       }
     }
-    Uri webUrl = null;
+
+    Uri webUrl = destination;
     List<Map<String, Object>> webMapList = (List<Map<String, Object>>) appLinkDict.get("web");
     if (webMapList != null && webMapList.size() > 0) {
       Map<String, Object> webMap = webMapList.get(0);
       List<Map<String, Object>> urls = (List<Map<String, Object>>) webMap.get("url");
       if (urls != null && urls.size() > 0) {
         String webUrlString = (String) urls.get(0).get(DICTIONARY_VALUE_KEY);
-        webUrl = tryCreateUri(webUrlString);
+        if (Arrays.asList("none", "").contains(webUrlString)) {
+          webUrl = null;
+        } else {
+          webUrl = tryCreateUri(webUrlString);
+        }
       }
     }
     return new AppLink(destination, targets, webUrl);

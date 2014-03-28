@@ -234,7 +234,7 @@ public class TaskTest extends InstrumentationTestCase {
           Task<Void> task = Task.callInBackground(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-              Thread.sleep((long) (Math.random() * 1000));
+              Thread.sleep((long) (Math.random() * 100));
               return null;
             }
           });
@@ -269,7 +269,7 @@ public class TaskTest extends InstrumentationTestCase {
           Task<Void> task = Task.callInBackground(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-              Thread.sleep((long) (Math.random() * 1000));
+              Thread.sleep((long) (Math.random() * 100));
               if (number == 10) {
                 throw error;
               }
@@ -310,7 +310,7 @@ public class TaskTest extends InstrumentationTestCase {
           Task<Void> task = Task.callInBackground(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-              Thread.sleep((long) (Math.random() * 1000));
+              Thread.sleep((long) (Math.random() * 100));
               if (number == 10 || number == 11) {
                 throw error;
               }
@@ -353,7 +353,7 @@ public class TaskTest extends InstrumentationTestCase {
           Task.callInBackground(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-              Thread.sleep((long) (Math.random() * 1000));
+              Thread.sleep((long) (Math.random() * 100));
               if (number == 10) {
                 tcs.setCancelled();
               } else {

@@ -19,6 +19,20 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
         <uses-library android:name="android.test.runner" />
+        <activity android:name="bolts.utils.BoltsActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <data android:scheme="bolts" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name="bolts.utils.BoltsActivity2">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <data android:scheme="bolts2" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
