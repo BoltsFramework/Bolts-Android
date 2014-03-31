@@ -13,15 +13,33 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
+/**
+ * Provides a set of utility methods for working with incoming Intents that may contain App Link
+ * data.
+ */
 public final class AppLinks {
   static final String APPLINK_DATA_KEY_NAME = "al_applink_data";
   static final String EXTRAS_KEY_NAME = "extras";
   static final String TARGET_KEY_NAME = "target_url";
 
+  /**
+   * Gets the App Link data for an intent, if there is any.
+   *
+   * @param intent the incoming intent.
+   * @return a bundle containing the App Link data for the intent, or {@code null} if none
+   * is specified.
+   */
   public static Bundle getAppLinkData(Intent intent) {
     return intent.getBundleExtra(APPLINK_DATA_KEY_NAME);
   }
 
+  /**
+   * Gets the App Link extras for an intent, if there is any.
+   *
+   * @param intent the incoming intent.
+   * @return a bundle containing the App Link extras for the intent, or {@code null} if none is
+   * specified.
+   */
   public static Bundle getAppLinkExtras(Intent intent) {
     Bundle appLinkData = getAppLinkData(intent);
     if (appLinkData == null) {
@@ -30,6 +48,14 @@ public final class AppLinks {
     return appLinkData.getBundle(EXTRAS_KEY_NAME);
   }
 
+  /**
+   * Gets the target URL for an intent, regardless of whether the intent is from an App Link. If the
+   * intent is from an App Link, this will be the App Link target. Otherwise, it will be the data
+   * Uri from the intent itself.
+   *
+   * @param intent the incoming intent.
+   * @return the target URL for the intent.
+   */
   public static Uri getTargetUrl(Intent intent) {
     Bundle appLinkData = getAppLinkData(intent);
     if (appLinkData != null) {

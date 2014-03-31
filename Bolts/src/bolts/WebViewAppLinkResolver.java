@@ -11,7 +11,6 @@ package bolts;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -34,9 +33,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+/**
+ * A reference implementation for an App Link resolver that uses a hidden
+ * {@link android.webkit.WebView} to parse the HTML containing App Link metadata.
+ */
 public class WebViewAppLinkResolver implements AppLinkResolver {
   private final Context context;
 
+  /**
+   * Creates a WebViewAppLinkResolver.
+   *
+   * @param context the context in which to create the hidden {@link android.webkit.WebView}.
+   */
   public WebViewAppLinkResolver(Context context) {
     this.context = context;
   }
@@ -120,7 +128,6 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
         webView.addJavascriptInterface(new Object() {
           @JavascriptInterface
           public void setValue(String value) {
-            Log.d("bolts.Test", "Got value: " + value);
             try {
               tcs.trySetResult(new JSONArray(value));
             } catch (JSONException e) {
@@ -249,6 +256,10 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
     return Uri.parse(urlString);
   }
 
+  /**
+   * Gets a string with the proper encoding (including using the charset specified in the MIME type
+   * of the request) from a URLConnection.
+   */
   private static String readFromConnection(URLConnection connection) throws IOException {
     InputStream stream = connection.getInputStream();
     try {
