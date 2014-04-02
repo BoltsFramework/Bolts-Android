@@ -142,7 +142,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:app_name", "Bolts",
             "al:android:package", "com.bolts",
             "al:android:class", "com.bolts.BoltsActivity",
-            "al:web:url", "none");
+            "al:web:should_fallback", "0");
     Uri url = getURLForData(html);
     Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
             .getAppLinkFromUrlInBackground(url);
@@ -165,7 +165,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:app_name", "Bolts",
             "al:android:package", "com.bolts",
             "al:android:class", "com.bolts.BoltsActivity",
-            "al:web:url", "");
+            "al:web:should_fallback", "fAlse");
     Uri url = getURLForData(html);
     Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
             .getAppLinkFromUrlInBackground(url);
@@ -794,7 +794,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testAppLinkURLNavigationFailure() throws Exception {
-    String html = getHtmlWithMetaTags("al:web:url", "none");
+    String html = getHtmlWithMetaTags("al:web:should_fallback", "No");
     Uri uri = getURLForData(html);
 
     Task<AppLinkNavigation.NavigationType> task = AppLinkNavigation.navigateInBackground(

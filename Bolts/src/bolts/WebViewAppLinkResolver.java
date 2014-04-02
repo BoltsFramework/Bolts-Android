@@ -72,6 +72,10 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
   private static final String CLASS_KEY = "class";
   private static final String PACKAGE_KEY = "package";
   private static final String URL_KEY = "url";
+  private static final String SHOULD_FALLBACK_KEY = "should_fallback";
+  private static final String WEB_URL_KEY = "url";
+  private static final String WEB_KEY = "web";
+  private static final String ANDROID_KEY = "android";
 
   @Override
   public Task<AppLink> getAppLinkFromUrlInBackground(final Uri url) {
@@ -208,7 +212,8 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
   @SuppressWarnings("unchecked")
   private static AppLink makeAppLinkFromALData(Map<String, Object> appLinkDict, Uri destination) {
     List<AppLink.Target> targets = new ArrayList<AppLink.Target>();
-    List<Map<String, Object>> platformMapList = (List<Map<String, Object>>) appLinkDict.get("android");
+    List<Map<String, Object>> platformMapList =
+            (List<Map<String, Object>>) appLinkDict.get(ANDROID_KEY);
     if (platformMapList == null) {
       platformMapList = Collections.emptyList();
     }
@@ -220,30 +225,39 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
       List<Map<String, Object>> classes = getALList(platformMap, CLASS_KEY);
       List<Map<String, Object>> appNames = getALList(platformMap, APP_NAME_KEY);
 
-      int maxCount = Math.max(urls.size(), Math.max(packages.size(), Math.max(classes.size(), appNames.size())));
+      int maxCount = Math.max(urls.size(),
+              Math.max(packages.size(), Math.max(classes.size(), appNames.size())));
       for (int i = 0; i < maxCount; i++) {
-        String urlString = (String) (urls.size() > i ? urls.get(i).get(DICTIONARY_VALUE_KEY) : null);
+        String urlString = (String) (urls.size() > i ?
+                urls.get(i).get(DICTIONARY_VALUE_KEY) : null);
         Uri url = tryCreateUri(urlString);
-        String packageName = (String) (packages.size() > i ? packages.get(i).get(DICTIONARY_VALUE_KEY) : null);
-        String className = (String) (classes.size() > i ? classes.get(i).get(DICTIONARY_VALUE_KEY) : null);
-        String appName = (String) (appNames.size() > i ? appNames.get(i).get(DICTIONARY_VALUE_KEY) : null);
+        String packageName = (String) (packages.size() > i ?
+                packages.get(i).get(DICTIONARY_VALUE_KEY) : null);
+        String className = (String) (classes.size() > i ?
+                classes.get(i).get(DICTIONARY_VALUE_KEY) : null);
+        String appName = (String) (appNames.size() > i ?
+                appNames.get(i).get(DICTIONARY_VALUE_KEY) : null);
         AppLink.Target target = new AppLink.Target(packageName, className, url, appName);
         targets.add(target);
       }
     }
 
     Uri webUrl = destination;
-    List<Map<String, Object>> webMapList = (List<Map<String, Object>>) appLinkDict.get("web");
+    List<Map<String, Object>> webMapList = (List<Map<String, Object>>) appLinkDict.get(WEB_KEY);
     if (webMapList != null && webMapList.size() > 0) {
       Map<String, Object> webMap = webMapList.get(0);
-      List<Map<String, Object>> urls = (List<Map<String, Object>>) webMap.get("url");
-      if (urls != null && urls.size() > 0) {
-        String webUrlString = (String) urls.get(0).get(DICTIONARY_VALUE_KEY);
-        if (Arrays.asList("none", "").contains(webUrlString)) {
+      List<Map<String, Object>> urls = (List<Map<String, Object>>) webMap.get(WEB_URL_KEY);
+      List<Map<String, Object>> shouldFallbacks =
+              (List<Map<String, Object>>) webMap.get(SHOULD_FALLBACK_KEY);
+      if (shouldFallbacks != null && shouldFallbacks.size() > 0) {
+        String shouldFallbackString = (String) shouldFallbacks.get(0).get(DICTIONARY_VALUE_KEY);
+        if (Arrays.asList("no", "false", "0").contains(shouldFallbackString.toLowerCase())) {
           webUrl = null;
-        } else {
-          webUrl = tryCreateUri(webUrlString);
         }
+      }
+      if (webUrl != null && urls != null && urls.size() > 0) {
+        String webUrlString = (String) urls.get(0).get(DICTIONARY_VALUE_KEY);
+        webUrl = tryCreateUri(webUrlString);
       }
     }
     return new AppLink(destination, targets, webUrl);
