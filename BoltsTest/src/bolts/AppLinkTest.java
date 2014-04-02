@@ -136,7 +136,7 @@ public class AppLinkTest extends InstrumentationTestCase {
     Assert.assertNotNull(task.getError());
   }
 
-  public void testWebViewSimpleAppLinkParsingNoneWebUrl() throws Exception {
+  public void testWebViewSimpleAppLinkParsingZeroShouldFallback() throws Exception {
     String html = getHtmlWithMetaTags("al:android", null,
             "al:android:url", "bolts://",
             "al:android:app_name", "Bolts",
@@ -159,7 +159,7 @@ public class AppLinkTest extends InstrumentationTestCase {
     Assert.assertNull(link.getWebUrl());
   }
 
-  public void testWebViewSimpleAppLinkParsingEmptyWebUrl() throws Exception {
+  public void testWebViewSimpleAppLinkParsingFalseShouldFallback() throws Exception {
     String html = getHtmlWithMetaTags("al:android", null,
             "al:android:url", "bolts://",
             "al:android:app_name", "Bolts",
