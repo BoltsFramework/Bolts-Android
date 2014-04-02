@@ -67,15 +67,16 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
           "})())";
   private static final String PREFER_HEADER = "Prefer-Html-Meta-Tags";
   private static final String META_TAG_PREFIX = "al";
-  private static final String DICTIONARY_VALUE_KEY = "value";
-  private static final String APP_NAME_KEY = "app_name";
-  private static final String CLASS_KEY = "class";
-  private static final String PACKAGE_KEY = "package";
-  private static final String URL_KEY = "url";
-  private static final String SHOULD_FALLBACK_KEY = "should_fallback";
-  private static final String WEB_URL_KEY = "url";
-  private static final String WEB_KEY = "web";
-  private static final String ANDROID_KEY = "android";
+
+  private static final String KEY_AL_VALUE = "value";
+  private static final String KEY_APP_NAME = "app_name";
+  private static final String KEY_CLASS = "class";
+  private static final String KEY_PACKAGE = "package";
+  private static final String KEY_URL = "url";
+  private static final String KEY_SHOULD_FALLBACK = "should_fallback";
+  private static final String KEY_WEB_URL = "url";
+  private static final String KEY_WEB = "web";
+  private static final String KEY_ANDROID = "android";
 
   @Override
   public Task<AppLink> getAppLinkFromUrlInBackground(final Uri url) {
@@ -153,8 +154,8 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
     }, Task.UI_THREAD_EXECUTOR).onSuccess(new Continuation<JSONArray, AppLink>() {
       @Override
       public AppLink then(Task<JSONArray> task) throws Exception {
-        Map<String, Object> alData = parseALData(task.getResult());
-        AppLink appLink = makeAppLinkFromALData(alData, url);
+        Map<String, Object> alData = parseAlData(task.getResult());
+        AppLink appLink = makeAppLinkFromAlData(alData, url);
         return appLink;
       }
     });
@@ -165,7 +166,7 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
    * The structure of this object is a dictionary where each key holds an array of app link
    * data dictionaries.  Values are stored in a key called "_value".
    */
-  private static Map<String, Object> parseALData(JSONArray dataArray) throws JSONException {
+  private static Map<String, Object> parseAlData(JSONArray dataArray) throws JSONException {
     HashMap<String, Object> al = new HashMap<String, Object>();
     for (int i = 0; i < dataArray.length(); i++) {
       JSONObject tag = dataArray.getJSONObject(i);
@@ -177,7 +178,8 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
       Map<String, Object> root = al;
       for (int j = 1; j < nameComponents.length; j++) {
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> children = (List<Map<String, Object>>) root.get(nameComponents[j]);
+        List<Map<String, Object>> children =
+                (List<Map<String, Object>>) root.get(nameComponents[j]);
         if (children == null) {
           children = new ArrayList<Map<String, Object>>();
           root.put(nameComponents[j], children);
@@ -191,9 +193,9 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
       }
       if (tag.has("content")) {
         if (tag.isNull("content")) {
-          root.put(DICTIONARY_VALUE_KEY, null);
+          root.put(KEY_AL_VALUE, null);
         } else {
-          root.put(DICTIONARY_VALUE_KEY, tag.getString("content"));
+          root.put(KEY_AL_VALUE, tag.getString("content"));
         }
       }
     }
@@ -201,7 +203,7 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
   }
 
   @SuppressWarnings("unchecked")
-  private static List<Map<String, Object>> getALList(Map<String, Object> map, String key) {
+  private static List<Map<String, Object>> getAlList(Map<String, Object> map, String key) {
     List<Map<String, Object>> result = (List<Map<String, Object>>) map.get(key);
     if (result == null) {
       return Collections.emptyList();
@@ -210,60 +212,60 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
   }
 
   @SuppressWarnings("unchecked")
-  private static AppLink makeAppLinkFromALData(Map<String, Object> appLinkDict, Uri destination) {
+  private static AppLink makeAppLinkFromAlData(Map<String, Object> appLinkDict, Uri destination) {
     List<AppLink.Target> targets = new ArrayList<AppLink.Target>();
     List<Map<String, Object>> platformMapList =
-            (List<Map<String, Object>>) appLinkDict.get(ANDROID_KEY);
+            (List<Map<String, Object>>) appLinkDict.get(KEY_ANDROID);
     if (platformMapList == null) {
       platformMapList = Collections.emptyList();
     }
     for (Map<String, Object> platformMap : platformMapList) {
       // The schema requires a single url/package/app name/class, but we could find multiple
       // of them. We'll make a best effort to interpret this data.
-      List<Map<String, Object>> urls = getALList(platformMap, URL_KEY);
-      List<Map<String, Object>> packages = getALList(platformMap, PACKAGE_KEY);
-      List<Map<String, Object>> classes = getALList(platformMap, CLASS_KEY);
-      List<Map<String, Object>> appNames = getALList(platformMap, APP_NAME_KEY);
+      List<Map<String, Object>> urls = getAlList(platformMap, KEY_URL);
+      List<Map<String, Object>> packages = getAlList(platformMap, KEY_PACKAGE);
+      List<Map<String, Object>> classes = getAlList(platformMap, KEY_CLASS);
+      List<Map<String, Object>> appNames = getAlList(platformMap, KEY_APP_NAME);
 
       int maxCount = Math.max(urls.size(),
               Math.max(packages.size(), Math.max(classes.size(), appNames.size())));
       for (int i = 0; i < maxCount; i++) {
         String urlString = (String) (urls.size() > i ?
-                urls.get(i).get(DICTIONARY_VALUE_KEY) : null);
-        Uri url = tryCreateUri(urlString);
+                urls.get(i).get(KEY_AL_VALUE) : null);
+        Uri url = tryCreateUrl(urlString);
         String packageName = (String) (packages.size() > i ?
-                packages.get(i).get(DICTIONARY_VALUE_KEY) : null);
+                packages.get(i).get(KEY_AL_VALUE) : null);
         String className = (String) (classes.size() > i ?
-                classes.get(i).get(DICTIONARY_VALUE_KEY) : null);
+                classes.get(i).get(KEY_AL_VALUE) : null);
         String appName = (String) (appNames.size() > i ?
-                appNames.get(i).get(DICTIONARY_VALUE_KEY) : null);
+                appNames.get(i).get(KEY_AL_VALUE) : null);
         AppLink.Target target = new AppLink.Target(packageName, className, url, appName);
         targets.add(target);
       }
     }
 
     Uri webUrl = destination;
-    List<Map<String, Object>> webMapList = (List<Map<String, Object>>) appLinkDict.get(WEB_KEY);
+    List<Map<String, Object>> webMapList = (List<Map<String, Object>>) appLinkDict.get(KEY_WEB);
     if (webMapList != null && webMapList.size() > 0) {
       Map<String, Object> webMap = webMapList.get(0);
-      List<Map<String, Object>> urls = (List<Map<String, Object>>) webMap.get(WEB_URL_KEY);
+      List<Map<String, Object>> urls = (List<Map<String, Object>>) webMap.get(KEY_WEB_URL);
       List<Map<String, Object>> shouldFallbacks =
-              (List<Map<String, Object>>) webMap.get(SHOULD_FALLBACK_KEY);
+              (List<Map<String, Object>>) webMap.get(KEY_SHOULD_FALLBACK);
       if (shouldFallbacks != null && shouldFallbacks.size() > 0) {
-        String shouldFallbackString = (String) shouldFallbacks.get(0).get(DICTIONARY_VALUE_KEY);
+        String shouldFallbackString = (String) shouldFallbacks.get(0).get(KEY_AL_VALUE);
         if (Arrays.asList("no", "false", "0").contains(shouldFallbackString.toLowerCase())) {
           webUrl = null;
         }
       }
       if (webUrl != null && urls != null && urls.size() > 0) {
-        String webUrlString = (String) urls.get(0).get(DICTIONARY_VALUE_KEY);
-        webUrl = tryCreateUri(webUrlString);
+        String webUrlString = (String) urls.get(0).get(KEY_AL_VALUE);
+        webUrl = tryCreateUrl(webUrlString);
       }
     }
     return new AppLink(destination, targets, webUrl);
   }
 
-  private static Uri tryCreateUri(String urlString) {
+  private static Uri tryCreateUrl(String urlString) {
     if (urlString == null) {
       return null;
     }

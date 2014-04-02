@@ -18,9 +18,9 @@ import android.os.Bundle;
  * data.
  */
 public final class AppLinks {
-  static final String APPLINK_DATA_KEY_NAME = "al_applink_data";
-  static final String EXTRAS_KEY_NAME = "extras";
-  static final String TARGET_KEY_NAME = "target_url";
+  static final String KEY_NAME_APPLINK_DATA = "al_applink_data";
+  static final String KEY_NAME_EXTRAS = "extras";
+  static final String KEY_NAME_TARGET = "target_url";
 
   /**
    * Gets the App Link data for an intent, if there is any.
@@ -30,7 +30,7 @@ public final class AppLinks {
    * is specified.
    */
   public static Bundle getAppLinkData(Intent intent) {
-    return intent.getBundleExtra(APPLINK_DATA_KEY_NAME);
+    return intent.getBundleExtra(KEY_NAME_APPLINK_DATA);
   }
 
   /**
@@ -45,7 +45,7 @@ public final class AppLinks {
     if (appLinkData == null) {
       return null;
     }
-    return appLinkData.getBundle(EXTRAS_KEY_NAME);
+    return appLinkData.getBundle(KEY_NAME_EXTRAS);
   }
 
   /**
@@ -59,7 +59,7 @@ public final class AppLinks {
   public static Uri getTargetUrl(Intent intent) {
     Bundle appLinkData = getAppLinkData(intent);
     if (appLinkData != null) {
-      return Uri.parse(appLinkData.getString(TARGET_KEY_NAME));
+      return Uri.parse(appLinkData.getString(KEY_NAME_TARGET));
     }
     return intent.getData();
   }

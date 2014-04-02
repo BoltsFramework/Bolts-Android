@@ -38,9 +38,6 @@ public class AppLink {
      * @param appName     the name of the app.
      */
     public Target(String packageName, String className, Uri url, String appName) {
-      if (packageName == null) {
-        throw new IllegalArgumentException("Android AppLinkTargets must have a packageName");
-      }
       this.packageName = packageName;
       this.className = className;
       this.url = url;
@@ -110,7 +107,7 @@ public class AppLink {
    * @return the ordered list of Targets for this platform.
    */
   public List<Target> getTargets() {
-    return targets;
+    return Collections.unmodifiableList(targets);
   }
 
   /**
