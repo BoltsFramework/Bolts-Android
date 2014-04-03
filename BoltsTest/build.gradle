@@ -23,4 +23,8 @@ android {
             java.srcDirs = ['src']
         }
     }
+
+    lintOptions {
+        abortOnError false
+    }
 }
