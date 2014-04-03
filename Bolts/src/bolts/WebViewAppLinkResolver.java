@@ -93,8 +93,14 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
         connection.setRequestProperty(PREFER_HEADER, META_TAG_PREFIX);
         connection.connect();
 
-        content.set(readFromConnection(connection));
-        contentType.set(connection.getContentType());
+        try {
+          content.set(readFromConnection(connection));
+          contentType.set(connection.getContentType());
+        } finally {
+          if (connection instanceof HttpURLConnection) {
+            ((HttpURLConnection) connection).disconnect();
+          }
+        }
         return null;
       }
     }).onSuccessTask(new Continuation<Void, Task<JSONArray>>() {
