@@ -283,7 +283,17 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
    * of the request) from a URLConnection.
    */
   private static String readFromConnection(URLConnection connection) throws IOException {
-    InputStream stream = connection.getInputStream();
+    InputStream stream;
+    if (connection instanceof HttpURLConnection) {
+      HttpURLConnection httpConnection = (HttpURLConnection) connection;
+      try {
+        stream = connection.getInputStream();
+      } catch (Exception e) {
+        stream = httpConnection.getErrorStream();
+      }
+    } else {
+      stream = connection.getInputStream();
+    }
     try {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       byte[] buffer = new byte[1024];
