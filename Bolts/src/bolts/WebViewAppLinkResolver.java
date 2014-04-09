@@ -85,13 +85,31 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
     return Task.callInBackground(new Callable<Void>() {
       @Override
       public Void call() throws Exception {
-        // Fetch the content at the given URL.
-        URLConnection connection = new URL(url.toString()).openConnection();
-        if (connection instanceof HttpURLConnection) {
-          ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
+        URL currentURL = new URL(url.toString());
+        URLConnection connection = null;
+        while (currentURL != null) {
+          // Fetch the content at the given URL.
+          connection = currentURL.openConnection();
+          if (connection instanceof HttpURLConnection) {
+            // Unfortunately, this doesn't actually follow redirects if they go from http->https,
+            // so we have to do that manually.
+            ((HttpURLConnection) connection).setInstanceFollowRedirects(true);
+          }
+          connection.setRequestProperty(PREFER_HEADER, META_TAG_PREFIX);
+          connection.connect();
+
+          if (connection instanceof HttpURLConnection) {
+            HttpURLConnection httpConnection = (HttpURLConnection) connection;
+            if (httpConnection.getResponseCode() >= 300 && httpConnection.getResponseCode() < 400) {
+              currentURL = new URL(httpConnection.getHeaderField("Location"));
+              httpConnection.disconnect();
+            } else {
+              currentURL = null;
+            }
+          } else {
+            currentURL = null;
+          }
         }
-        connection.setRequestProperty(PREFER_HEADER, META_TAG_PREFIX);
-        connection.connect();
 
         try {
           content.set(readFromConnection(connection));
