@@ -59,7 +59,10 @@ public final class AppLinks {
   public static Uri getTargetUrl(Intent intent) {
     Bundle appLinkData = getAppLinkData(intent);
     if (appLinkData != null) {
-      return Uri.parse(appLinkData.getString(KEY_NAME_TARGET));
+      String targetString = appLinkData.getString(KEY_NAME_TARGET);
+      if (targetString != null) {
+        return Uri.parse(targetString);
+      }
     }
     return intent.getData();
   }
