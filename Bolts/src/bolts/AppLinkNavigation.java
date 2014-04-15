@@ -118,7 +118,7 @@ public class AppLinkNavigation {
     Bundle data = new Bundle();
     data.putAll(getAppLinkData());
     data.putString(AppLinks.KEY_NAME_TARGET, getAppLink().getSourceUrl().toString());
-    data.putInt(KEY_NAME_VERSION, VERSION);
+    data.putString(KEY_NAME_VERSION, VERSION);
     data.putString(KEY_NAME_USER_AGENT, "Bolts Android " + Bolts.VERSION);
     data.putBundle(AppLinks.KEY_NAME_EXTRAS, getExtras());
     return data;
