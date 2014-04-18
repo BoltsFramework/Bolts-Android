@@ -7,9 +7,10 @@ and we have decided to open source these libraries to make them available to
 others. Using these libraries does not require using any Parse services. Nor
 do they require having a Parse or Facebook developer account.
 
-The first component in Bolts is "tasks", which make organization of complex
-asynchronous code more manageable. A task is kind of like a JavaScript Promise,
-but available for iOS and Android.
+Bolts includes:
+
+* "Tasks", which make organization of complex asynchronous code more manageable. A task is kind of like a JavaScript Promise, but available for iOS and Android.
+* An implementation of the [App Links protocol](http://www.applinks.org), helping you link to content in other apps and handle incoming deep-links.
 
 For more information, see the [Bolts Android API Reference](http://boltsframework.github.io/docs/android/).
 
@@ -354,3 +355,101 @@ saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, ParseObject>() {
 });
 ```
 
+# App Links
+
+[App Links](http://www.applinks.org) provide a cross-platform mechanism that allows a developer to define and publish a deep-linking scheme for their content, allowing other apps to link directly to an experience optimized for the device they are running on. Whether you are building an app that receives incoming links or one that may link out to other apps' content, Bolts provides tools to simplify implementation of the [App Links protocol](http://www.applinks.org/documentation).
+
+## Handling an App Link
+
+The most common case for will be making your app receive App Links. In-linking will allow your users to quickly access the richest, most native-feeling presentation of linked content on their devices.  Bolts makes it easy to handle an inbound App Link (as well as general inbound deep-links) by providing utilities for processing an incoming `Intent`.
+
+For example, you can use the `AppLinks` utility class to parse an incoming `Intent` in your `Activity`:
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+  super.onCreate(savedInstanceState);
+
+  // An intent filter in your AndroidManifest.xml has probably already filtered by path
+  // to some extent.
+
+  // Use the target URL from the App Link to locate content
+  Uri targetUrl = AppLinks.getTargetUrl(getIntent());
+  String profileName = targetUrl.getLastPathSegment();
+
+  // You can also check the query string easily
+  String query = targetUrl.getQueryParameter("query");
+
+  // Apps that have existing deep-linking support and map their App Links to existing
+  // deep-linking functionality may instead want to perform these operations on the original data
+  // URL
+  String profileName = getIntent().getData().getLastPathSegment();
+
+  // You can also check the query string easily
+  String query = getIntent().getData().getQueryParameter("query");
+
+  // Apps can easily check the Extras and App Link data from the App Link as well
+  String fbAccessToken = AppLinks.getAppLinkExtras("fb_access_token");
+  String refererData = AppLinks.getAppLinkExtras("referer");
+}
+```
+
+## Navigating to a URL
+
+Following an App Link allows your app to provide the best user experience (as defined by the receiving app) when a user navigates to a link. Bolts makes this process simple, automating the steps required to follow a link:
+
+1. Resolve the App Link by getting the App Link metadata from the HTML at the URL specified
+2. Step through App Link targets relevant to the device being used, checking whether the app that can handle the target is present on the device
+3. If an app is present, build an `Intent` with the appropriate al_applink_data specified and navigate to that `Intent`
+4. Otherwise, open the browser with the original URL specified
+
+In the simplest case, it takes just one line of code to navigate to a URL that may have an App Link:
+
+```java
+AppLinkNavigation.navigateInBackground(getContext(), url);
+```
+
+### Adding App and Navigation Data
+
+Under most circumstances, the data that will need to be passed along to an app during a navigation will be contained in the URL itself, so that whether or not the app is actually installed on the device, users are taken to the correct content. Occasionally, however, apps will want to pass along data that is relevant for an app-to-app navigation, or will want to augment the App Link protocol with information that might be used by the app to adjust how the app should behave (e.g. showing a link back to the referring app).
+
+If you want to take advantage of these features, you can break apart the navigation process. First, you must have an App Link to which you wish to navigate:
+
+```java
+new WebViewAppLinkResolver(getContext()).getAppLinkFromUrlInBackground(url).continueWith(
+    new Continuation<AppLink, AppLinkNavigation.NavigationType>() {
+      @Override
+      public AppLinkNavigation.NavigationType then(Task<AppLink> task) {
+        AppLink link = task.getResult();
+        return null;
+      }
+    });
+```
+
+Then, you can build an App Link request with any additional data you would like and navigate:
+
+```java
+Bundle extras = new Bundle();
+extras.put("access_token", "t0kEn");
+Bundle appLinkData = new Bundle();
+appLinkData.put("12345");
+AppLinkNavigation navigation = new AppLinkNavigation(link, extras, appLinkData);
+return navigation.navigate();
+```
+
+### Resolving App Link Metadata
+
+Bolts allows for custom App Link resolution, which may be used as a performance optimization (e.g. caching the metadata) or as a mechanism to allow developers to use a centralized index for obtaining App Link metadata. A custom App Link resolver just needs to be able to take a URL and return an `AppLink` containing the ordered list of `AppLink.Target`s that are applicable for this device. Bolts provides one of these out of the box that performs this resolution on the device using a hidden `WebView`.
+
+You can use any resolver that implements the `AppLinkResolver` interface by using one of the overloads on `AppLinkNavigation`:
+
+```java
+AppLinkNavigation.navigateInBackground(url, resolver);
+```
+
+Alternatively, a you can swap out the default resolver to be used by the built-in APIs:
+
+```java
+AppLinkNavigation.setDefaultResolver(resolver);
+AppLinkNavigation.navigateInBackground(url);
+```
