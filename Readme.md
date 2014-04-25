@@ -361,7 +361,7 @@ saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, ParseObject>() {
 
 ## Handling an App Link
 
-The most common case for will be making your app receive App Links. In-linking will allow your users to quickly access the richest, most native-feeling presentation of linked content on their devices.  Bolts makes it easy to handle an inbound App Link (as well as general inbound deep-links) by providing utilities for processing an incoming `Intent`.
+The most common case for will be making your app receive App Links. In-linking will allow your users to quickly access the richest, most native-feeling presentation of linked content on their devices. Bolts makes it easy to handle an inbound App Link (as well as general inbound deep-links) by providing utilities for processing an incoming `Intent`.
 
 For example, you can use the `AppLinks` utility class to parse an incoming `Intent` in your `Activity`:
 
@@ -373,22 +373,22 @@ protected void onCreate(Bundle savedInstanceState) {
   // An intent filter in your AndroidManifest.xml has probably already filtered by path
   // to some extent.
 
-  // Use the target URL from the App Link to locate content
+  // Use the target URL from the App Link to locate content.
   Uri targetUrl = AppLinks.getTargetUrl(getIntent());
   String profileName = targetUrl.getLastPathSegment();
 
-  // You can also check the query string easily
+  // You can also check the query string easily.
   String query = targetUrl.getQueryParameter("query");
 
   // Apps that have existing deep-linking support and map their App Links to existing
-  // deep-linking functionality may instead want to perform these operations on the original data
-  // URL
+  // deep-linking functionality may instead want to perform these operations on the original
+  // data URL.
   String profileName = getIntent().getData().getLastPathSegment();
 
-  // You can also check the query string easily
+  // You can also check the query string easily.
   String query = getIntent().getData().getQueryParameter("query");
 
-  // Apps can easily check the Extras and App Link data from the App Link as well
+  // Apps can easily check the Extras and App Link data from the App Link as well.
   String fbAccessToken = AppLinks.getAppLinkExtras("fb_access_token");
   String refererData = AppLinks.getAppLinkExtras("referer");
 }
