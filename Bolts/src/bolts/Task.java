@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -44,6 +45,19 @@ public class Task<TResult> {
    * An {@link java.util.concurrent.Executor} that executes tasks on the UI thread.
    */
   public static final Executor UI_THREAD_EXECUTOR = new UIThreadExecutor();
+
+  /**
+   * A thread-local copy of the current "logical stack trace" for each thread. A logical stack trace
+   * is different from the regular stack trace because it links across task boundaries such as
+   * continueWith.
+   */
+  private static final ThreadLocal<ArrayList<StackTraceElement>> stackTrace =
+      new ThreadLocal<ArrayList<StackTraceElement>>();
+  
+  /**
+   * Whether to track logical stack traces across continuations.
+   */
+  private static final AtomicBoolean isStackTrackingEnabled = new AtomicBoolean(false);
 
   private final Object lock = new Object();
   private boolean complete;
@@ -191,14 +205,18 @@ public class Task<TResult> {
    */
   public static <TResult> Task<TResult> call(final Callable<TResult> callable, Executor executor) {
     final Task<TResult>.TaskCompletionSource tcs = Task.<TResult> create();
+    final ArrayList<StackTraceElement> currentStack = getCurrentStack();
     executor.execute(new Runnable() {
       @Override
       public void run() {
+        final ArrayList<StackTraceElement> previousStack = stackTrace.get();
+        stackTrace.set(currentStack);
         try {
           tcs.setResult(callable.call());
         } catch (Exception e) {
           tcs.setError(e);
         }
+        stackTrace.set(previousStack);
       }
     });
     return tcs.getTask();
@@ -244,9 +262,9 @@ public class Task<TResult> {
           if (count.decrementAndGet() == 0) {
             if (errors.size() != 0) {
               if (errors.size() == 1) {
-                allFinished.setError(errors.get(0));
+                allFinished.setError(errors.get(0), false);
               } else {
-                allFinished.setError(new AggregateException(errors));
+                allFinished.setError(new AggregateException(errors), false);
               }
             } else if (isCancelled.get()) {
               allFinished.setCancelled();
@@ -293,12 +311,82 @@ public class Task<TResult> {
   }
 
   /**
+   * Returns true if the task framework should keep track of the logical stack.
+   */
+  private static boolean isStackTrackingEnabled() {
+    return isStackTrackingEnabled.get();
+  }
+  
+  /**
+   * Enables tracking the "logical stack" across multiple continuations. If this is enabled, the
+   * stack trace for any exception that a task errors with will be modified. Its stack trace will be
+   * augmented by adding in the stacks of previous continuations that led to the current code. This
+   * makes debugging async code much easier, but also has a significant negative impact on overall
+   * performance. This should only be used when debugging, and never in production code.
+   */
+  public static void enableStackTracking(boolean newValue) {
+    isStackTrackingEnabled.set(newValue);
+  }
+  
+  /**
+   * Returns the current logical stack for this thread. It combines the current actual stack with
+   * the stack that has been tracked across continuations.
+   */
+  private static ArrayList<StackTraceElement> getCurrentStack() {
+    if (!isStackTrackingEnabled()) {
+      return null;
+    }
+    
+    List<StackTraceElement> newStack = Arrays.asList(Thread.currentThread().getStackTrace());
+    // Trim out the garbage on the stack trace just from getting the stack trace.
+    while (newStack.size() > 0
+        && ("dalvik.system.VMStack".equals(newStack.get(0).getClassName()) && "getThreadStackTrace"
+            .equals(newStack.get(0).getMethodName()))
+        || ("java.lang.Thread".equals(newStack.get(0).getClassName()) && "getStackTrace"
+            .equals(newStack.get(0).getMethodName()))
+        || ("bolts.Task".equals(newStack.get(0).getClassName()) && "getCurrentStack"
+            .equals(newStack.get(0).getMethodName()))) {
+      newStack = newStack.subList(1, newStack.size());
+    }
+
+    return getCurrentStack(newStack);
+  }
+  
+  /**
+   * Returns the current logical stack. It combines the given stack with the stack that has been
+   * tracked across continuations.
+   * 
+   * @param newStack
+   *          The current local stack to be combined with the stack from previous continuations. For
+   *          example, when handling an exception, the stack for the exception should be passed in
+   *          here.
+   */
+  private static ArrayList<StackTraceElement> getCurrentStack(List<StackTraceElement> newStack) {
+    if (!isStackTrackingEnabled()) {
+      return null;
+    }
+    
+    // If stack-tracking is enabled, capture the stack here.
+    final ArrayList<StackTraceElement> currentStack = new ArrayList<StackTraceElement>();
+    currentStack.addAll(newStack);
+            
+    // And add in the previously captured stack.
+    final ArrayList<StackTraceElement> previousStack = stackTrace.get();
+    if (previousStack != null) {
+      currentStack.addAll(previousStack);
+    }
+    return currentStack;
+  }
+  
+  /**
    * Adds a continuation that will be scheduled using the executor, returning a new task that
    * completes after the continuation has finished running. This allows the continuation to be
    * scheduled on different thread.
    */
   public <TContinuationResult> Task<TContinuationResult> continueWith(
       final Continuation<TResult, TContinuationResult> continuation, final Executor executor) {
+    final ArrayList<StackTraceElement> currentStack = getCurrentStack();
+    
     boolean completed = false;
     final Task<TContinuationResult>.TaskCompletionSource tcs = Task.<TContinuationResult> create();
     synchronized (lock) {
@@ -307,14 +395,14 @@ public class Task<TResult> {
         this.continuations.add(new Continuation<TResult, Void>() {
           @Override
           public Void then(Task<TResult> task) {
-            completeImmediately(tcs, continuation, task, executor);
+            completeImmediately(tcs, continuation, task, executor, currentStack);
             return null;
           }
         });
       }
     }
     if (completed) {
-      completeImmediately(tcs, continuation, this, executor);
+      completeImmediately(tcs, continuation, this, executor, currentStack);
     }
     return tcs.getTask();
   }
@@ -334,6 +422,8 @@ public class Task<TResult> {
    */
   public <TContinuationResult> Task<TContinuationResult> continueWithTask(
       final Continuation<TResult, Task<TContinuationResult>> continuation, final Executor executor) {
+    final ArrayList<StackTraceElement> currentStack = getCurrentStack();
+
     boolean completed = false;
     final Task<TContinuationResult>.TaskCompletionSource tcs = Task.<TContinuationResult> create();
     synchronized (lock) {
@@ -342,14 +432,14 @@ public class Task<TResult> {
         this.continuations.add(new Continuation<TResult, Void>() {
           @Override
           public Void then(Task<TResult> task) {
-            completeAfterTask(tcs, continuation, task, executor);
+            completeAfterTask(tcs, continuation, task, executor, currentStack);
             return null;
           }
         });
       }
     }
     if (completed) {
-      completeAfterTask(tcs, continuation, this, executor);
+      completeAfterTask(tcs, continuation, this, executor, currentStack);
     }
     return tcs.getTask();
   }
@@ -435,20 +525,25 @@ public class Task<TResult> {
    * @param executor
    *          The executor to use when running the continuation (allowing the continuation to be
    *          scheduled on a different thread).
+   * @param currentStack
+   *          If stack-tracking is enabled, the current logical stack for this continuation.
    */
   private static <TContinuationResult, TResult> void completeImmediately(
       final Task<TContinuationResult>.TaskCompletionSource tcs,
       final Continuation<TResult, TContinuationResult> continuation, final Task<TResult> task,
-      Executor executor) {
+      Executor executor, final ArrayList<StackTraceElement> currentStack) {
     executor.execute(new Runnable() {
       @Override
       public void run() {
+        final ArrayList<StackTraceElement> previousStack = stackTrace.get();
+        stackTrace.set(currentStack);
         try {
           TContinuationResult result = continuation.then(task);
           tcs.setResult(result);
         } catch (Exception e) {
           tcs.setError(e);
         }
+        stackTrace.set(previousStack);
       }
     });
   }
@@ -472,10 +567,13 @@ public class Task<TResult> {
   private static <TContinuationResult, TResult> void completeAfterTask(
       final Task<TContinuationResult>.TaskCompletionSource tcs,
       final Continuation<TResult, Task<TContinuationResult>> continuation,
-      final Task<TResult> task, final Executor executor) {
+      final Task<TResult> task, final Executor executor,
+      final ArrayList<StackTraceElement> currentStack) {
     executor.execute(new Runnable() {
       @Override
       public void run() {
+        final ArrayList<StackTraceElement> previousStack = stackTrace.get();
+        stackTrace.set(currentStack);
         try {
           Task<TContinuationResult> result = continuation.then(task);
           if (result == null) {
@@ -487,7 +585,7 @@ public class Task<TResult> {
                 if (task.isCancelled()) {
                   tcs.setCancelled();
                 } else if (task.isFaulted()) {
-                  tcs.setError(task.getError());
+                  tcs.setError(task.getError(), false);
                 } else {
                   tcs.setResult(task.getResult());
                 }
@@ -498,6 +596,7 @@ public class Task<TResult> {
         } catch (Exception e) {
           tcs.setError(e);
         }
+        stackTrace.set(previousStack);
       }
     });
   }
@@ -506,6 +605,10 @@ public class Task<TResult> {
     synchronized (lock) {
       for (Continuation<TResult, ?> continuation : continuations) {
         try {
+          /*
+           * We don't have to set the current stack trace here because it's already been captured
+           * and added to the continuation in continueWith or continueWithTask.
+           */
           continuation.then(this);
         } catch (RuntimeException e) {
           throw e;
@@ -570,6 +673,23 @@ public class Task<TResult> {
      * Sets the error on the Task if the Task hasn't already been completed.
      */
     public boolean trySetError(Exception error) {
+      return trySetError(error, isStackTrackingEnabled());
+    }
+
+    /**
+     * Sets the error on the Task if the Task hasn't already been completed.
+     * 
+     * @param rewriteStackTrace
+     *          Whether to rewrite the stack trace with the logical stack trace that was tracked. 
+     */
+    private boolean trySetError(Exception error, boolean rewriteStackTrace) {
+      if (rewriteStackTrace) {
+        // Override the stack trace in the exception with the current continuation stack trace.
+        List<StackTraceElement> newStack = Arrays.asList(error.getStackTrace());
+        List<StackTraceElement> currentStack = getCurrentStack(newStack);
+        error.setStackTrace(currentStack.toArray(new StackTraceElement[0]));
+      }
+      
       synchronized (lock) {
         if (complete) {
           return false;
@@ -605,6 +725,18 @@ public class Task<TResult> {
      */
     public void setError(Exception error) {
       if (!trySetError(error)) {
+        throw new IllegalStateException("Cannot set the error on a completed task.");
+      }
+    }
+
+    /**
+     * Sets the error of the Task, throwing if the Task has already been completed.
+     * 
+     * @param rewriteStackTrace
+     *          Whether to rewrite the stack trace with the logical stack trace that was tracked. 
+     */
+    private void setError(Exception error, boolean rewriteStackTrace) {
+      if (!trySetError(error, rewriteStackTrace)) {
         throw new IllegalStateException("Cannot set the error on a completed task.");
       }
     }
