@@ -24,8 +24,8 @@ android.libraryVariants.all { variant ->
     task("generateBolts${variant.name.capitalize()}Javadoc", type: Javadoc) {
         description "Generates Javadoc for $variant.name."
         source = variant.javaCompile.source
-        ext.androidJar = "${android.plugin.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-        classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
+        def androidJar = project.plugins.findPlugin("android-library").bootClasspath
+        classpath = files(variant.javaCompile.classpath.files) + files(androidJar)
         exclude '**/com/bolts/**'
     }
 }
