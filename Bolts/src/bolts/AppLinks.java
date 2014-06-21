@@ -9,6 +9,7 @@
  */
 package bolts;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,6 +19,9 @@ import android.os.Bundle;
  * data.
  */
 public final class AppLinks {
+  /* event name for broadcast sent when handle incoming applink intent */
+  public static final String BF_APP_LINK_NAVIGATE_IN_EVENT_NAME = "al_nav_in";
+
   static final String KEY_NAME_APPLINK_DATA = "al_applink_data";
   static final String KEY_NAME_EXTRAS = "extras";
   static final String KEY_NAME_TARGET = "target_url";
@@ -56,6 +60,7 @@ public final class AppLinks {
    * @param intent the incoming intent.
    * @return the target URL for the intent.
    */
+  @Deprecated // since Jul 2014
   public static Uri getTargetUrl(Intent intent) {
     Bundle appLinkData = getAppLinkData(intent);
     if (appLinkData != null) {
@@ -66,4 +71,47 @@ public final class AppLinks {
     }
     return intent.getData();
   }
+
+  /**
+   * Gets the target URL for an intent. If the intent is from an App Link, this will be the App Link target.
+   * Otherwise, it return null; For app link intent, this function will broadcast a 'parse' event.
+   *
+   * @param context the context where this function is called.
+   * @param intent the incoming intent.
+   * @return the target URL for the intent if applink intent; null otherwise.
+   */
+  public static Uri getTargetUrl(Context context, Intent intent) {
+    return getTargetUrl(context, intent, false);
+  }
+
+  /**
+   * Gets the target URL for an intent. If the intent is from an App Link, this will be the App Link target.
+   * Otherwise, it return null; For app link intent, this function will broadcast a BF_APP_LINK_PARSE_EVENT_NAME event
+   * and a BF_APP_LINK_NAVIGATE_IN_EVENT_NAME event.
+   *
+   * @param intent the incoming intent.
+   * @return the target URL for the intent if applink intent; null otherwise.
+   */
+  public static Uri getTargetUrlFromInboundIntent(Context context, Intent intent) {
+    return getTargetUrl(context, intent, true);
+  }
+
+  private static Uri getTargetUrl(
+      Context context,
+      Intent intent,
+      Boolean shouldSendNavigateInEvent
+  ) {
+    Bundle appLinkData = getAppLinkData(intent);
+    if (appLinkData != null) {
+      String targetString = appLinkData.getString(KEY_NAME_TARGET);
+      if (targetString != null) {
+        if (shouldSendNavigateInEvent) {
+          MeasurementEvent.sendEventBroadcast(context, BF_APP_LINK_NAVIGATE_IN_EVENT_NAME, intent, null);
+        }
+        return Uri.parse(targetString);
+      }
+    }
+    return null;
+  }
+
 }

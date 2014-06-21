@@ -22,6 +22,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -31,6 +32,10 @@ import java.util.List;
  * by creating AppLinkNavigations themselves.
  */
 public class AppLinkNavigation {
+
+  public static final String BFAppLinkNavigateOutEventName = "al_nav_out";
+
+  private static final String KEY_NAME_REFERRER = "referrer";
   private static final String KEY_NAME_USER_AGENT = "user_agent";
   private static final String KEY_NAME_VERSION = "version";
   private static final String VERSION = "1.0";
@@ -114,12 +119,18 @@ public class AppLinkNavigation {
   /**
    * Creates a bundle containing the final, constructed App Link data to be used in navigation.
    */
-  private Bundle buildAppLinkDataForNavigation() {
+  private Bundle buildAppLinkDataForNavigation(Context context) {
     Bundle data = new Bundle();
+
+    String referrerApp = context.getString(context.getApplicationInfo().labelRes);
+    if (referrerApp != null) {
+      referrerApp = context.getPackageName();
+    }
     data.putAll(getAppLinkData());
     data.putString(AppLinks.KEY_NAME_TARGET, getAppLink().getSourceUrl().toString());
     data.putString(KEY_NAME_VERSION, VERSION);
     data.putString(KEY_NAME_USER_AGENT, "Bolts Android " + Bolts.VERSION);
+    data.putString(KEY_NAME_REFERRER, referrerApp);
     data.putBundle(AppLinks.KEY_NAME_EXTRAS, getExtras());
     return data;
   }
@@ -232,8 +243,7 @@ public class AppLinkNavigation {
    */
   public NavigationResult navigate(Context context) {
     PackageManager pm = context.getPackageManager();
-
-    Bundle finalAppLinkData = buildAppLinkDataForNavigation();
+    Bundle finalAppLinkData = buildAppLinkDataForNavigation(context);
 
     Intent eligibleTargetIntent = null;
     for (AppLink.Target target : getAppLink().getTargets()) {
@@ -256,30 +266,70 @@ public class AppLinkNavigation {
       }
     }
 
+    Intent outIntent = null;
+    NavigationResult result = NavigationResult.FAILED;
     if (eligibleTargetIntent != null) {
-      context.startActivity(eligibleTargetIntent);
-      return NavigationResult.APP;
-    }
-
-    // Fall back to the web if it's available
-    Uri webUrl = getAppLink().getWebUrl();
-    if (webUrl != null) {
-      JSONObject appLinkDataJson;
-      try {
-        appLinkDataJson = getJSONForBundle(finalAppLinkData);
-      } catch (JSONException e) {
-        throw new RuntimeException(e);
+      outIntent = eligibleTargetIntent;
+      result = NavigationResult.APP;
+    } else {
+      // Fall back to the web if it's available
+      Uri webUrl = getAppLink().getWebUrl();
+      if (webUrl != null) {
+        JSONObject appLinkDataJson;
+        try {
+          appLinkDataJson = getJSONForBundle(finalAppLinkData);
+        } catch (JSONException e) {
+          sendAppLinkNavigateEventBroadcast(context, eligibleTargetIntent, e, NavigationResult.WEB);
+          throw new RuntimeException(e);
+        }
+        webUrl = webUrl.buildUpon()
+            .appendQueryParameter(AppLinks.KEY_NAME_APPLINK_DATA, appLinkDataJson.toString())
+            .build();
+        outIntent = new Intent(Intent.ACTION_VIEW, webUrl);
+        result = NavigationResult.WEB;
       }
-      webUrl = webUrl.buildUpon()
-              .appendQueryParameter(AppLinks.KEY_NAME_APPLINK_DATA, appLinkDataJson.toString())
-              .build();
-      Intent launchBrowserIntent = new Intent(Intent.ACTION_VIEW, webUrl);
-      context.startActivity(launchBrowserIntent);
-      return NavigationResult.WEB;
     }
 
-    return NavigationResult.FAILED;
+    sendAppLinkNavigateEventBroadcast(context, outIntent, null, result);
+    if (outIntent != null) {
+      context.startActivity(outIntent);
+    }
+    return result;
   }
+
+  private void sendAppLinkNavigateEventBroadcast(Context context, Intent intent, JSONException e, NavigationResult type) {
+    HashMap<String, String> extraLoggingData = new HashMap<String, String>();
+    if (e != null) {
+      extraLoggingData.put("error", e.getLocalizedMessage());
+    }
+
+    String success = null;
+    String linkType = null;
+    switch (type) {
+      case WEB:
+        success = "1";
+        linkType = "web";
+        break;
+      case FAILED:
+        success = "0";
+        linkType = "fail";
+        break;
+      case APP:
+        success = "1";
+        linkType = "app";
+        break;
+    }
+
+    if (success != null) {
+      extraLoggingData.put("success", success);
+    }
+
+    if (linkType != null) {
+      extraLoggingData.put("type", linkType);
+    }
+
+    MeasurementEvent.sendEventBroadcast(context, BFAppLinkNavigateOutEventName, intent, extraLoggingData);
+}
 
   /**
    * Sets the default resolver to be used for App Link resolution. Setting this to null will cause
