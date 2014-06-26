@@ -32,6 +32,7 @@ public class MeasurementEvent {
 
   private final static String MEASUREMENT_EVENT_SENT_TAGS_KEY = "bolts_events_sent";
 
+  private Context appContext;
   private String name;
   private Bundle args;
 
@@ -41,10 +42,6 @@ public class MeasurementEvent {
       Intent appLinkIntent,
       Map<String, String> extraLoggingData
   ) {
-
-    if (!shouldSendBroadcast(appLinkIntent, name)) {
-      return;
-    }
 
     Bundle logData = new Bundle();
     if (appLinkIntent != null) {
@@ -64,7 +61,7 @@ public class MeasurementEvent {
 
       Bundle applinkData = AppLinks.getAppLinkData(appLinkIntent);
       if (applinkData != null) {
-        Uri targetURI = AppLinks.getTargetUrl(context, appLinkIntent);
+        Uri targetURI = AppLinks.getTargetUrl(appLinkIntent);
         logData.putString("targetURLHost", targetURI.getHost());
         for (String key : applinkData.keySet()) {
           Object o = applinkData.get(key);
@@ -86,49 +83,21 @@ public class MeasurementEvent {
         logData.putString(key, extraLoggingData.get(key));
       }
     }
-
-    MeasurementEvent event = new MeasurementEvent(name, logData);
-    event.tagEventSent(appLinkIntent, name);
-    event.sendBroadcast(context);
+    MeasurementEvent event = new MeasurementEvent(context, name, logData);
+    event.sendBroadcast();
   }
 
-  // Mark event that has been sent in the intent, so that shouldSendBroadcast can suppress duplicate event.
-  private void tagEventSent(Intent appLinkIntent, String eventName) {
-    if (appLinkIntent == null) {
-      return;
-    }
-    ArrayList<String> eventsSent = appLinkIntent.getStringArrayListExtra(MEASUREMENT_EVENT_SENT_TAGS_KEY);
-    if (eventsSent == null) {
-      eventsSent = new ArrayList<String>();
-      appLinkIntent.putExtra(MEASUREMENT_EVENT_SENT_TAGS_KEY, eventsSent);
-    }
-    eventsSent.add(eventName);
-  }
-
-  private static boolean shouldSendBroadcast(Intent appLinkIntent, String eventName) {
-    if (appLinkIntent == null) {
-      // extreme rare, so we log it.
-      return true;
-    }
-    ArrayList<String> eventsSent = appLinkIntent.getStringArrayListExtra(MEASUREMENT_EVENT_SENT_TAGS_KEY);
-    if (eventsSent == null) {
-      eventsSent = new ArrayList<String>();
-      appLinkIntent.putExtra(MEASUREMENT_EVENT_SENT_TAGS_KEY, eventsSent);
-    }
-
-    return !eventsSent.contains(eventName);
-  }
-
-  private MeasurementEvent(String eventName, Bundle eventArgs) {
+  private MeasurementEvent(Context context, String eventName, Bundle eventArgs) {
+    appContext = context.getApplicationContext();
     name = eventName;
     args = eventArgs;
   }
 
-  private void sendBroadcast(Context context) {
+  private void sendBroadcast() {
     if (name == null) {
       Log.d(getClass().getName(), "Event name is required");
     }
-    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(context);
+    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(appContext);
     Intent event = new Intent(MEASUREMENT_EVENT_NOTIFICATION_NAME);
     event.putExtra(MEASUREMENT_EVENT_NAME_KEY, name);
     event.putExtra(MEASUREMENT_EVENT_ARGS_KEY, args);
@@ -152,20 +121,7 @@ public class MeasurementEvent {
       if (o instanceof Map) {
         return new JSONObject((Map) o).toString();
       }
-      if (o instanceof Boolean ||
-          o instanceof Byte ||
-          o instanceof Character ||
-          o instanceof Double ||
-          o instanceof Float ||
-          o instanceof Integer ||
-          o instanceof Long ||
-          o instanceof Short ||
-          o instanceof String) {
-        return o.toString();
-      }
-      if (o.getClass().getPackage().getName().startsWith("java.")) {
-        return o.toString();
-      }
+      return o.toString();
     } catch (Exception ignored) {
     }
     return null;

@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a pending request to navigate to an App Link. Most developers will simply use
@@ -33,9 +34,9 @@ import java.util.List;
  */
 public class AppLinkNavigation {
 
-  public static final String BFAppLinkNavigateOutEventName = "al_nav_out";
+  public static final String APP_LINK_NAVIGATE_OUT_EVENT_NAME = "al_nav_out";
 
-  private static final String KEY_NAME_REFERRER = "referrer";
+  private static final String KEY_NAME_REFERRER = "referer";
   private static final String KEY_NAME_USER_AGENT = "user_agent";
   private static final String KEY_NAME_VERSION = "version";
   private static final String VERSION = "1.0";
@@ -50,15 +51,28 @@ public class AppLinkNavigation {
     /**
      * Indicates that the navigation failed and no app was opened.
      */
-    FAILED,
+    FAILED("failed", false),
     /**
      * Indicates that the navigation succeeded by opening the URL in the browser.
      */
-    WEB,
+    WEB("web", true),
     /**
      * Indicates that the navigation succeeded by opening the URL in an app on the device.
      */
-    APP,
+    APP("app", true);
+
+    private String code;
+    private boolean succeeded;
+    public String getCode() {
+      return code;
+    }
+    public boolean isSucceeded() {
+      return succeeded;
+    }
+    NavigationResult(String code, boolean success) {
+      this.code = code;
+      this.succeeded = success;
+    }
   }
 
   private final AppLink appLink;
@@ -279,7 +293,7 @@ public class AppLinkNavigation {
         try {
           appLinkDataJson = getJSONForBundle(finalAppLinkData);
         } catch (JSONException e) {
-          sendAppLinkNavigateEventBroadcast(context, eligibleTargetIntent, e, NavigationResult.WEB);
+          sendAppLinkNavigateEventBroadcast(context, eligibleTargetIntent, e, NavigationResult.FAILED);
           throw new RuntimeException(e);
         }
         webUrl = webUrl.buildUpon()
@@ -298,37 +312,15 @@ public class AppLinkNavigation {
   }
 
   private void sendAppLinkNavigateEventBroadcast(Context context, Intent intent, JSONException e, NavigationResult type) {
-    HashMap<String, String> extraLoggingData = new HashMap<String, String>();
+    Map<String, String> extraLoggingData = new HashMap<String, String>();
     if (e != null) {
       extraLoggingData.put("error", e.getLocalizedMessage());
     }
 
-    String success = null;
-    String linkType = null;
-    switch (type) {
-      case WEB:
-        success = "1";
-        linkType = "web";
-        break;
-      case FAILED:
-        success = "0";
-        linkType = "fail";
-        break;
-      case APP:
-        success = "1";
-        linkType = "app";
-        break;
-    }
+    extraLoggingData.put("success", type.isSucceeded() ? "1" : "0");
+    extraLoggingData.put("type", type.getCode());
 
-    if (success != null) {
-      extraLoggingData.put("success", success);
-    }
-
-    if (linkType != null) {
-      extraLoggingData.put("type", linkType);
-    }
-
-    MeasurementEvent.sendEventBroadcast(context, BFAppLinkNavigateOutEventName, intent, extraLoggingData);
+    MeasurementEvent.sendEventBroadcast(context, APP_LINK_NAVIGATE_OUT_EVENT_NAME, intent, extraLoggingData);
 }
 
   /**
