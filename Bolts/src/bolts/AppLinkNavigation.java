@@ -36,9 +36,11 @@ public class AppLinkNavigation {
 
   public static final String APP_LINK_NAVIGATE_OUT_EVENT_NAME = "al_nav_out";
 
-  private static final String KEY_NAME_REFERRER = "referer";
   private static final String KEY_NAME_USER_AGENT = "user_agent";
   private static final String KEY_NAME_VERSION = "version";
+  private static final String KEY_NAME_REFERER_APP_LINK = "referer_app_link";
+  private static final String KEY_NAME_REFERER_APP_LINK_APP_NAME = "app_name";
+  private static final String KEY_NAME_REFERER_APP_LINK_PACKAGE = "package";
   private static final String VERSION = "1.0";
 
   private static AppLinkResolver defaultResolver;
@@ -135,16 +137,17 @@ public class AppLinkNavigation {
    */
   private Bundle buildAppLinkDataForNavigation(Context context) {
     Bundle data = new Bundle();
+    Bundle refererAppLinkData = new Bundle();
+    String refererAppName = context.getString(context.getApplicationInfo().labelRes);
+    String refererAppPackage = context.getPackageName();
+    refererAppLinkData.putString(KEY_NAME_REFERER_APP_LINK_APP_NAME, refererAppName);
+    refererAppLinkData.putString(KEY_NAME_REFERER_APP_LINK_PACKAGE, refererAppPackage);
 
-    String referrerApp = context.getString(context.getApplicationInfo().labelRes);
-    if (referrerApp != null) {
-      referrerApp = context.getPackageName();
-    }
     data.putAll(getAppLinkData());
     data.putString(AppLinks.KEY_NAME_TARGET, getAppLink().getSourceUrl().toString());
     data.putString(KEY_NAME_VERSION, VERSION);
     data.putString(KEY_NAME_USER_AGENT, "Bolts Android " + Bolts.VERSION);
-    data.putString(KEY_NAME_REFERRER, referrerApp);
+    data.putBundle(KEY_NAME_REFERER_APP_LINK, refererAppLinkData);
     data.putBundle(AppLinks.KEY_NAME_EXTRAS, getExtras());
     return data;
   }

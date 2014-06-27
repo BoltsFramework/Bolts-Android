@@ -26,11 +26,11 @@ import java.util.ArrayList;
 import java.util.Map;
 
 public class MeasurementEvent {
-  public final static String MEASUREMENT_EVENT_NOTIFICATION_NAME = "com.parse.bolts.measurement_event";
-  public final static String MEASUREMENT_EVENT_NAME_KEY = "event_name";
-  public final static String MEASUREMENT_EVENT_ARGS_KEY = "event_args";
+  public static final String MEASUREMENT_EVENT_NOTIFICATION_NAME = "com.parse.bolts.measurement_event";
+  public static final String MEASUREMENT_EVENT_NAME_KEY = "event_name";
+  public static final String MEASUREMENT_EVENT_ARGS_KEY = "event_args";
 
-  private final static String MEASUREMENT_EVENT_SENT_TAGS_KEY = "bolts_events_sent";
+  private static final String MEASUREMENT_EVENT_SENT_TAGS_KEY = "bolts_events_sent";
 
   private Context appContext;
   private String name;
