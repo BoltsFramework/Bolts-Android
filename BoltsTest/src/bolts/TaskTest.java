@@ -9,18 +9,14 @@
  */
 package bolts;
 
+import android.os.Looper;
+import android.test.InstrumentationTestCase;
+
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import bolts.AggregateException;
-import bolts.Continuation;
-import bolts.Task;
-
-import android.os.Looper;
-import android.test.InstrumentationTestCase;
 
 public class TaskTest extends InstrumentationTestCase {
   private void runTaskTest(Callable<Task<?>> callable) {

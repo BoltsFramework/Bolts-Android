@@ -2,7 +2,7 @@
 *.swp
 
 # Gradle
-*/build/
+build
 .gradle/
 
 # Intellij project files

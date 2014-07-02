@@ -85,23 +85,23 @@ saveAsync(obj).onSuccess(new Continuation<ParseObject, Void>() {
 Tasks are a little bit magical, in that they let you chain them without nesting. If you use `continueWithTask` instead of `continueWith`, then you can return a new task. The task returned by `continueWithTask` will not be considered finished until the new task returned from within `continueWithTask` is. This lets you perform multiple actions without incurring the pyramid code you would get with callbacks. Likewise, `onSuccessTask` is a version of `onSuccess` that returns a new task. So, use `continueWith`/`onSuccess` to do more synchronous work, or `continueWithTask`/`onSuccessTask` to do more asynchronous work.
 
 ```java
-final ParseQuery<ParseObject> query = new ParseQuery.getQuery("Student");
+final ParseQuery<ParseObject> query = ParseQuery.getQuery("Student");
 query.orderByDescending("gpa");
-findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, ParseObject>() {
+findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, Task<ParseObject>>() {
   public Task<ParseObject> then(Task<List<ParseObject>> task) throws Exception {
     List<ParseObject> students = task.getResult();
     students.get(0).put("valedictorian", true);
     return saveAsync(students.get(0));
   }
-}).onSuccessTask(new Continuation<ParseObject, List<ParseObject>>() {
+}).onSuccessTask(new Continuation<ParseObject, Task<List<ParseObject>>>() {
   public Task<List<ParseObject>> then(Task<ParseObject> task) throws Exception{
     ParseObject valedictorian = task.getResult();
     return findAsync(query);
   }
-}).onSuccessTask(new Continuation<List<ParseObject>, ParseObject>() {
+}).onSuccessTask(new Continuation<List<ParseObject>, Task<ParseObject>>() {
   public Task<ParseObject> then(Task<List<ParseObject>> task) throws Exception {
     List<ParseObject> students = task.getResult();
-    students.get(1).set("salutatorian", true);
+    students.get(1).put("salutatorian", true);
     return saveAsync(students.get(1));
   }
 }).onSuccess(new Continuation<ParseObject, Void>() {
@@ -117,22 +117,22 @@ findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, ParseObject>(
 By carefully choosing whether to call `continueWith` or `onSuccess`, you can control how errors are propagated in your application. Using `continueWith` lets you handle errors by transforming them or dealing with them. You can think of failed tasks kind of like throwing an exception. In fact, if you throw an exception inside a continuation, the resulting task will be faulted with that exception.
 
 ```java
-final ParseQuery<ParseObject> query = new ParseQuery.getQuery("Student");
+final ParseQuery<ParseObject> query = ParseQuery.getQuery("Student");
 query.orderByDescending("gpa");
-findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, ParseObject>() {
+findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, Task<ParseObject>>() {
   public Task<ParseObject> then(Task<List<ParseObject>> task) throws Exception {
     List<ParseObject> students = task.getResult();
     students.get(0).put("valedictorian", true);
     // Force this callback to fail.
     throw new RuntimeException("There was an error.");
   }
-}).onSuccessTask(new Continuation<ParseObject, List<ParseObject>>() {
+}).onSuccessTask(new Continuation<ParseObject, Task<List<ParseObject>>>() {
   public Task<List<ParseObject>> then(Task<ParseObject> task) throws Exception {
     // Now this continuation will be skipped.
     ParseObject valedictorian = task.getResult();
     return findAsync(query);
   }
-}).continueWithTask(new Continuation<List<ParseObject>, ParseObject>() {
+}).continueWithTask(new Continuation<List<ParseObject>, Task<ParseObject>>() {
   public Task<ParseObject> then(Task<List<ParseObject>> task) throws Exception {
     if (task.isFaulted()) {
       // This error handler WILL be called.
@@ -144,7 +144,7 @@ findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, ParseObject>(
 
     // This will also be skipped.
     List<ParseObject> students = task.getResult();
-    students.get(1).set("salutatorian", true);
+    students.get(1).put("salutatorian", true);
     return saveAsync(students.get(1));
   }
 }).onSuccess(new Continuation<ParseObject, Void>() {
@@ -166,13 +166,13 @@ When you're getting started, you can just use the tasks returned from methods li
 public Task<String> succeedAsync() {
   // Java Generics syntax can be confusing sometimes. :)
   // This creates a TCS for a Task<String>.
-  Task<String>.TaskCompletionSource successful = Task.<String> create();
+  Task<String>.TaskCompletionSource successful = Task.create();
   successful.setResult("The good result.");
   return successful.getTask();
 }
 
 public Task<String> failAsync() {
-  Task<String>.TaskCompletionSource failed = Task.<String> create();
+  Task<String>.TaskCompletionSource failed = Task.create();
   failed.setError(new RuntimeException("An error message."));
   return failed.getTask();
 }
@@ -224,14 +224,14 @@ Tasks are convenient when you want to do a series of tasks in a row, each one wa
 ParseQuery<ParseObject> query = ParseQuery.getQuery("Comments");
 query.whereEqualTo("post", 123);
 
-findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Void>() {
-  public Task<Void> then(List<ParseObject> results) throws Exception {
+findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Task<Void>>() {
+  public Task<Void> then(Task<List<ParseObject>> results) throws Exception {
     // Create a trivial completed task as a base case.
     Task<Void> task = Task.forResult(null);
-    for (ParseObject result : results) {
+    for (final ParseObject result : results) {
       // For each item, extend the task with a function to delete the item.
-      task = task.continueWithTask(new Continuation<Void, Void>() {
-        public Void then(Void ignored) throws Exception {
+      task = task.continueWithTask(new Continuation<Void, Task<Void>>() {
+        public Task<Void> then(Task<Void> ignored) throws Exception {
           // Return a task that will be marked as completed when the delete is finished.
           return deleteAsync(result);
         }
@@ -240,7 +240,7 @@ findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Void>() {
     return task;
   }
 }).continueWith(new Continuation<Void, Void>() {
-  public Void then(Void ignored) throws Exception {
+  public Void then(Task<Void> ignored) throws Exception {
     // Every comment was deleted.
     return null;
   }
@@ -255,8 +255,8 @@ You can also perform several tasks in parallel, using the `whenAll` method. You 
 ParseQuery<ParseObject> query = ParseQuery.getQuery("Comments");
 query.whereEqualTo("post", 123);
 
-findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Void>() {
-  public Task<Void> then(List<ParseObject> results) throws Exception {
+findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Task<Void>>() {
+  public Task<Void> then(Task<List<ParseObject>> results) throws Exception {
     // Collect one task for each delete into an array.
     ArrayList<Task<Void>> tasks = new ArrayList<Task<Void>>();
     for (ParseObject result : results) {
@@ -268,7 +268,7 @@ findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Void>() {
     return Task.whenAll(tasks);
   }
 }).onSuccess(new Continuation<Void, Void>() {
-  public Void then(Void ignored) throws Exception {
+  public Void then(Task<Void> ignored) throws Exception {
     // Every comment was deleted.
     return null;
   }
@@ -311,7 +311,7 @@ For common cases, such as dispatching on the main thread, we have provided defau
 
 ```java
 fetchAsync(object).continueWith(new Continuation<ParseObject, Void>() {
-  public Void then(ParseObject object) throws Exception {
+  public Void then(Task<ParseObject> object) throws Exception {
     TextView textView = (TextView)findViewById(R.id.name);
     textView.setText(object.get("name"));
     return null;
@@ -327,28 +327,28 @@ One difficulty in breaking up code across multiple callbacks is that they have d
 // Capture a variable to be modified in the Task callbacks.
 final Capture<Integer> successfulSaveCount = new Capture<Integer>(0);
 
-saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, ParseObject>() {
-  public Task<ParseObject> then(ParseObject obj1) throws Exception {
+saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>() {
+  public Task<ParseObject> then(Task<ParseObject> obj1) throws Exception {
     successfulSaveCount.set(successfulSaveCount.get() + 1);
     return saveAsync(obj2);
   }
-}).onSuccessTask(new Continuation<ParseObject, ParseObject>() {
-  public Task<ParseObject> then(ParseObject obj2) throws Exception {
+}).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>() {
+  public Task<ParseObject> then(Task<ParseObject> obj2) throws Exception {
     successfulSaveCount.set(successfulSaveCount.get() + 1);
     return saveAsync(obj3);
   }
-}).onSuccessTask(new Continuation<ParseObject, ParseObject>() {
-  public Task<ParseObject> then(ParseObject obj3) throws Exception {
+}).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>() {
+  public Task<ParseObject> then(Task<ParseObject> obj3) throws Exception {
     successfulSaveCount.set(successfulSaveCount.get() + 1);
     return saveAsync(obj4);
   }
 }).onSuccess(new Continuation<ParseObject, Void>() {
-  public Void then(ParseObject obj4) throws Exception {
+  public Void then(Task<ParseObject> obj4) throws Exception {
     successfulSaveCount.set(successfulSaveCount.get() + 1);
     return null;
   }
 }).continueWith(new Continuation<Void, Integer>() {
-  public Integer then(Void ignored) throws Exception {
+  public Integer then(Task<Void> ignored) throws Exception {
     // successfulSaveCount now contains the number of saves that succeeded.
     return successfulSaveCount.get();
   }
