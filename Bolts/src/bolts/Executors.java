@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  * amount of threads.
  */
 
-/** package */ final class Executors {
+public final class Executors {
 
   private Executors() {
     // do nothing
@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
         KEEP_ALIVE_TIME, TimeUnit.SECONDS,
         new LinkedBlockingQueue<Runnable>(MAX_QUEUE_SIZE));
 
-    allowCoreThreadTimeout(executor, true);
+    allowCoreThreadTimeOut(executor, true);
 
     return executor;
   }
@@ -96,7 +96,7 @@ import java.util.concurrent.TimeUnit;
             new LinkedBlockingQueue<Runnable>(MAX_QUEUE_SIZE),
             threadFactory);
 
-    allowCoreThreadTimeout(executor, true);
+    allowCoreThreadTimeOut(executor, true);
 
     return executor;
   }
@@ -111,7 +111,7 @@ import java.util.concurrent.TimeUnit;
    * @param value true if should time out, else false
    */
   @SuppressLint("NewApi")
-  public static void allowCoreThreadTimeout(ThreadPoolExecutor executor, boolean value) {
+  public static void allowCoreThreadTimeOut(ThreadPoolExecutor executor, boolean value) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
       executor.allowCoreThreadTimeOut(value);
     }
