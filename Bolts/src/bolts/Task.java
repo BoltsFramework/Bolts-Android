@@ -248,6 +248,75 @@ public class Task<TResult> {
   }
 
   /**
+   * Creates a task that will complete when any of the supplied tasks have completed.
+   * <p/>
+   * The returned task will complete when any of the supplied tasks has completed. The returned task
+   * will always end in the completed state with its result set to the first task to complete. This
+   * is true even if the first task to complete ended in the canceled or faulted state.
+   *
+   * @param tasks
+   *          The tasks to wait on for completion.
+   * @return A task that represents the completion of one of the supplied tasks. 
+   *         The return task's result is the task that completed.
+   */
+  public static <TResult> Task<Task<TResult>> whenAnyResult(Collection<? extends Task<TResult>> tasks) {
+    if (tasks.size() == 0) {
+      return Task.forResult(null);
+    }
+
+    final Task<Task<TResult>>.TaskCompletionSource firstCompleted = Task.create();
+    final AtomicBoolean isAnyTaskComplete = new AtomicBoolean(false);
+
+    for (Task<TResult> task : tasks) {
+      task.continueWith(new Continuation<TResult, Void>() {
+        @Override
+        public Void then(Task<TResult> task) {
+          if (isAnyTaskComplete.compareAndSet(false, true)) {
+            firstCompleted.setResult(task);
+          }
+          return null;
+        }
+      });
+    }
+    return firstCompleted.getTask();
+  }
+
+   /**
+   * Creates a task that will complete when any of the supplied tasks have completed.
+   * <p/>
+   * The returned task will complete when any of the supplied tasks has completed. The returned task
+   * will always end in the completed state with its result set to the first task to complete. This
+   * is true even if the first task to complete ended in the canceled or faulted state.
+   *
+   * @param tasks
+   *          The tasks to wait on for completion.
+   * @return A task that represents the completion of one of the supplied tasks. 
+   *         The return task's Result is the task that completed.
+   */
+  @SuppressWarnings("unchecked")
+  public static Task<Task<?>> whenAny(Collection<? extends Task<?>> tasks) {
+    if (tasks.size() == 0) {
+      return Task.forResult(null);
+    }
+      
+    final Task<Task<?>>.TaskCompletionSource firstCompleted = Task.create();
+    final AtomicBoolean isAnyTaskComplete = new AtomicBoolean(false);
+      
+    for (Task<?> task : tasks) {
+      ((Task<Object>) task).continueWith(new Continuation<Object, Void>() {
+        @Override
+        public Void then(Task<Object> task) {
+          if (isAnyTaskComplete.compareAndSet(false, true)) {
+            firstCompleted.setResult(task);
+          }
+          return null;
+        }
+      });
+    }
+    return firstCompleted.getTask();
+  }
+
+  /**
    * Creates a task that completes when all of the provided tasks are complete.
    * <p/>
    * If any of the supplied tasks completes in a faulted state, the returned task will also complete
