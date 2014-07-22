@@ -9,6 +9,7 @@
  */
 package bolts;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,12 +19,14 @@ import android.os.Bundle;
  * data.
  */
 public final class AppLinks {
+
   static final String KEY_NAME_APPLINK_DATA = "al_applink_data";
   static final String KEY_NAME_EXTRAS = "extras";
   static final String KEY_NAME_TARGET = "target_url";
 
   /**
    * Gets the App Link data for an intent, if there is any.
+   * This is the authorized function to check if an intent is AppLink. If null is returned it is not.
    *
    * @param intent the incoming intent.
    * @return a bundle containing the App Link data for the intent, or {@code null} if none
@@ -65,5 +68,25 @@ public final class AppLinks {
       }
     }
     return intent.getData();
+  }
+
+  /**
+   * Gets the target URL for an intent. If the intent is from an App Link, this will be the App Link target.
+   * Otherwise, it return null; For app link intent, this function will broadcast APP_LINK_NAVIGATE_IN_EVENT_NAME event.
+   *
+   * @param context the context this function is called within.
+   * @param intent the incoming intent.
+   * @return the target URL for the intent if applink intent; null otherwise.
+   */
+  public static Uri getTargetUrlFromInboundIntent(Context context, Intent intent) {
+    Bundle appLinkData = getAppLinkData(intent);
+    if (appLinkData != null) {
+      String targetString = appLinkData.getString(KEY_NAME_TARGET);
+      if (targetString != null) {
+        MeasurementEvent.sendBroadcastEvent(context, MeasurementEvent.APP_LINK_NAVIGATE_IN_EVENT_NAME, intent, null);
+        return Uri.parse(targetString);
+      }
+    }
+    return null;
   }
 }
