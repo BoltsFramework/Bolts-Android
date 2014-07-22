@@ -9,23 +9,25 @@
  */
 package bolts;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.test.InstrumentationTestCase;
-
 import junit.framework.Assert;
-
 import org.json.JSONObject;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class AppLinkTest extends InstrumentationTestCase {
   private List<Intent> openedIntents;
@@ -105,6 +107,63 @@ public class AppLinkTest extends InstrumentationTestCase {
     Assert.assertNotNull(AppLinks.getAppLinkData(i));
     Assert.assertNotNull(AppLinks.getAppLinkExtras(i));
     Assert.assertEquals("bar", AppLinks.getAppLinkExtras(i).getString("foo"));
+  }
+
+  public void testIntentWithOnlyAppLinkURL() throws Exception {
+    JSONObject jsonAppLinkObj = new JSONObject();
+    jsonAppLinkObj.put("target_url", "http://www.example2.com");
+    jsonAppLinkObj.put("version", 1);
+    JSONObject jsonAppLinkReferrerObj = new JSONObject();
+    jsonAppLinkReferrerObj.put("url", "example://");
+    jsonAppLinkObj.put("referer_app_link", jsonAppLinkReferrerObj);
+    JSONObject jsonExtraObj = new JSONObject();
+    jsonExtraObj.put("foo", "bar");
+    jsonAppLinkObj.put("extras", jsonExtraObj);
+
+    Intent i = new Intent(Intent.ACTION_VIEW,
+        Uri.parse("http://www.example.com/?al_applink_data=" + jsonAppLinkObj.toString()));
+
+    Assert.assertEquals(Uri.parse("http://www.example2.com"), AppLinks.getTargetUrl(i));
+    Assert.assertNotNull(AppLinks.getAppLinkData(i));
+    Assert.assertNotNull(AppLinks.getAppLinkExtras(i));
+    Assert.assertEquals("bar", AppLinks.getAppLinkExtras(i).getString("foo"));
+  }
+
+  public void testAppLinkNavInEventBroadcast() throws Exception {
+    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
+    Bundle appLinkData = new Bundle();
+    appLinkData.putString("target_url", "http://www.example2.com");
+    Bundle appLinkRefererData = new Bundle();
+    appLinkRefererData.putString("url", "referer://");
+    appLinkRefererData.putString("app_name", "Referrer App");
+    appLinkData.putBundle("referer_app_link", appLinkRefererData);
+    i.putExtra("al_applink_data", appLinkData);
+    final String[] receivedStrings = new String[5];
+    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(getInstrumentation().getTargetContext());
+    manager.registerReceiver(
+        new BroadcastReceiver() {
+          @Override
+          public void onReceive(Context context, Intent intent) {
+            String eventName = intent.getStringExtra("event_name");
+            Bundle eventArgs = intent.getBundleExtra("event_args");
+            receivedStrings[0] = eventName;
+            receivedStrings[1] = eventArgs.getString("targetURL");
+            receivedStrings[2] = eventArgs.getString("inputURL");
+            receivedStrings[3] = eventArgs.getString("refererURL");
+            receivedStrings[4] = eventArgs.getString("refererAppName");
+          }
+        },
+        new IntentFilter("com.parse.bolts.measurement_event")
+    );
+
+    Uri targetUrl = AppLinks.getTargetUrlFromInboundIntent(getInstrumentation().getTargetContext(), i);
+    CountDownLatch lock = new CountDownLatch(1);
+    lock.await(2000, TimeUnit.MILLISECONDS);
+    assertEquals("al_nav_in", receivedStrings[0]);
+    assertEquals("http://www.example2.com", receivedStrings[1]);
+    assertEquals("http://www.example.com", receivedStrings[2]);
+    assertEquals("referer://", receivedStrings[3]);
+    assertEquals("Referrer App", receivedStrings[4]);
   }
 
   public void testWebViewSimpleAppLinkParsing() throws Exception {
