@@ -1,5 +1,7 @@
 Bolts
 ============
+[![Build Status](http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat)](https://travis-ci.org/BoltsFramework/Bolts-Android)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android)
 
 Bolts is a collection of low-level libraries designed to make developing mobile
 apps easier. Bolts was designed by Parse and Facebook for our own internal use,
