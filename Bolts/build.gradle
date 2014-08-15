@@ -13,19 +13,93 @@ android {
         main {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDirs = ['src']
-            resources.srcDirs = ['src']
-            res.srcDirs = ['res']
-            assets.srcDirs = ['assets']
         }
     }
 }
 
 android.libraryVariants.all { variant ->
-    task("generateBolts${variant.name.capitalize()}Javadoc", type: Javadoc) {
-        description "Generates Javadoc for $variant.name."
-        source = variant.javaCompile.source
-        def androidJar = project.plugins.findPlugin("android-library").bootClasspath
-        classpath = files(variant.javaCompile.classpath.files) + files(androidJar)
-        exclude '**/com/bolts/**'
+    def name = variant.buildType.name
+    def task = project.tasks.create(name: "jar${name.capitalize()}", type: Jar) {
+        dependsOn variant.javaCompile
+        from variant.javaCompile.destinationDir
+
+        exclude '**/R.class'
+        exclude '**/R\$*.class'
+        exclude '**/Manifest.class'
+        exclude '**/Manifest\$*.class'
+        exclude '**/BuildConfig.class'
     }
+
+    if (name.equals(com.android.builder.core.BuilderConstants.RELEASE)) {
+        artifacts.add('archives', task);
+    }
+}
+
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+def ossrhUsername = hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
+def ossrhPassword = hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
+
+uploadArchives {
+    repositories.mavenDeployer {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+            authentication(userName: ossrhUsername, password: ossrhPassword)
+        }
+
+        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+            authentication(userName: ossrhUsername, password: ossrhPassword)
+        }
+
+        pom.groupId = 'com.parse'
+        pom.artifactId = 'bolts'
+        pom.version = '1.1.0'
+
+        pom.project {
+            name 'Bolts-Android'
+            packaging 'jar'
+            description 'Bolts is a collection of low-level libraries designed to make developing mobile apps easier.'
+            url 'https://github.com/BoltsFramework/Bolts-Android'
+
+            scm {
+                connection 'scm:git@github.com:BoltsFramework/Bolts-Android.git'
+                developerConnection 'scm:git@github.com:BoltsFramework/Bolts-Android.git'
+                url 'https://github.com/BoltsFramework/Bolts-Android'
+            }
+
+            licenses {
+                license {
+                    name 'BSD 2-Clause License'
+                    url 'https://github.com/BoltsFramework/Bolts-Android/blob/master/LICENSE'
+                    distribution 'repo'
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign configurations.archives
+}
+
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives androidSourcesJar
+    archives androidJavadocsJar
 }
