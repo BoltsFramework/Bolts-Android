@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-package bolts;
+package bolts.android;
 
 import android.os.Build;
 import android.test.InstrumentationTestCase;
@@ -18,12 +18,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public class ExecutorsTest extends InstrumentationTestCase {
+public class AndroidExecutorsTest extends InstrumentationTestCase {
 
-  private static final int CORE_POOL_SIZE = Executors.CORE_POOL_SIZE;
-  private static final int MAX_POOL_SIZE = Executors.MAX_POOL_SIZE;
-  private static final int THREAD_TIMEOUT = (int)(Executors.KEEP_ALIVE_TIME * 1000 * 1.1);
-  private static final int MAX_QUEUE_SIZE = Executors.MAX_QUEUE_SIZE;
+  private static final int CORE_POOL_SIZE = AndroidExecutors.CORE_POOL_SIZE;
+  private static final int MAX_POOL_SIZE = AndroidExecutors.MAX_POOL_SIZE;
+  private static final int THREAD_TIMEOUT = (int)(AndroidExecutors.KEEP_ALIVE_TIME * 1000 * 1.1);
+  private static final int MAX_QUEUE_SIZE = AndroidExecutors.MAX_QUEUE_SIZE;
 
   LinkedList<CountDownLatch> corePoolAwaitLatchStack;
   LinkedList<CountDownLatch> corePoolEndLatchStack;
@@ -44,7 +44,7 @@ public class ExecutorsTest extends InstrumentationTestCase {
    * @throws InterruptedException
    */
   public void testNewCachedThreadPoolTimeout() throws InterruptedException {
-    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) AndroidExecutors.newCachedThreadPool();
 
     // Make sure we start at 0
     assertEquals(0, executor.getPoolSize());
@@ -71,7 +71,7 @@ public class ExecutorsTest extends InstrumentationTestCase {
    * @throws InterruptedException
    */
   public void testNewCachedThreadPoolQueue() throws InterruptedException {
-    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) AndroidExecutors.newCachedThreadPool();
     assertEquals(0, executor.getPoolSize());
     pushTasks(executor, CORE_POOL_SIZE, true);
 
@@ -110,7 +110,7 @@ public class ExecutorsTest extends InstrumentationTestCase {
   /**
    * Push or start X operations on to the executor that will not complete until they are popped off.
    *
-   * @see ExecutorsTest#popTasks(boolean)
+   * @see AndroidExecutorsTest#popTasks(boolean)
    *
    * @param executor
    *          The executor to execute operations on.
