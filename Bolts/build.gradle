@@ -38,6 +38,10 @@ android.libraryVariants.all { variant ->
 apply plugin: 'maven'
 apply plugin: 'signing'
 
+group = 'com.parse'
+version = '1.1.1-SNAPSHOT'
+
+def isSnapshot = version.endsWith('-SNAPSHOT')
 def ossrhUsername = hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
 def ossrhPassword = hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
 
@@ -53,12 +57,9 @@ uploadArchives {
             authentication(userName: ossrhUsername, password: ossrhPassword)
         }
 
-        pom.groupId = 'com.parse'
         pom.artifactId = 'bolts'
-        pom.version = '1.1.1-SNAPSHOT'
-
         pom.project {
-            name 'Bolts-Android'
+            name 'Bolts'
             packaging 'jar'
             description 'Bolts is a collection of low-level libraries designed to make developing mobile apps easier.'
             url 'https://github.com/BoltsFramework/Bolts-Android'
@@ -81,6 +82,7 @@ uploadArchives {
 }
 
 signing {
+    required { !isSnapshot && gradle.taskGraph.hasTask("uploadArchives") }
     sign configurations.archives
 }
 
