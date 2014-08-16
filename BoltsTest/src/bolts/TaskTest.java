@@ -35,6 +35,7 @@ public class TaskTest extends InstrumentationTestCase {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+    Task.enableStackTracking(false);
   }
 
   public void testPrimitives() {
@@ -507,4 +508,347 @@ public class TaskTest extends InstrumentationTestCase {
       }
     });
   }
-}
+  
+  public void testStackTrackerWithContinueWithTaskSetError() {
+    Task.enableStackTracking(true);
+
+    /*
+     * Add a set of function to track on the stack across multiple continuations.
+     */
+    class Funcs {
+      public Task<Void> fooInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return barInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> barInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return bazInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> bazInBackground() {
+        return Task.forError(new RuntimeException("An error to track."));
+      }
+    };
+    final Funcs funcs = new Funcs();
+    
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<Void> call() throws Exception {
+        return funcs.fooInBackground().continueWith(new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            assertTrue(task.isFaulted());
+            assertTrue(task.getError() instanceof RuntimeException);
+            RuntimeException error = (RuntimeException) task.getError();
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            assertTrue(stackTrace.length > 0);
+            boolean fooFound = false;
+            boolean barFound = false;
+            boolean bazFound = false;
+            for (StackTraceElement line : stackTrace) {
+              if ("fooInBackground".equals(line.getMethodName())) {
+                fooFound = true;
+              }
+              if ("barInBackground".equals(line.getMethodName())) {
+                barFound = true;
+              }
+              if ("bazInBackground".equals(line.getMethodName())) {
+                bazFound = true;
+              }
+            }
+            assertTrue(fooFound);
+            assertTrue(barFound);
+            assertTrue(bazFound);
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testStackTrackerWithContinueWithTaskThrows() {
+    Task.enableStackTracking(true);
+
+    /*
+     * Add a set of function to track on the stack across multiple continuations.
+     */
+    class Funcs {
+      public Task<Void> fooInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return barInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> barInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return bazInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> bazInBackground() {
+        throw new RuntimeException("An error to track.");
+      }
+    };
+    final Funcs funcs = new Funcs();
+    
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<Void> call() throws Exception {
+        return funcs.fooInBackground().continueWith(new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            assertTrue(task.isFaulted());
+            assertTrue(task.getError() instanceof RuntimeException);
+            RuntimeException error = (RuntimeException) task.getError();
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            assertTrue(stackTrace.length > 0);
+            boolean fooFound = false;
+            boolean barFound = false;
+            boolean bazFound = false;
+            for (StackTraceElement line : stackTrace) {
+              if ("fooInBackground".equals(line.getMethodName())) {
+                fooFound = true;
+              }
+              if ("barInBackground".equals(line.getMethodName())) {
+                barFound = true;
+              }
+              if ("bazInBackground".equals(line.getMethodName())) {
+                bazFound = true;
+              }
+            }
+            assertTrue(fooFound);
+            assertTrue(barFound);
+            assertTrue(bazFound);
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testStackTrackerWithContinueWithThrows() {
+    Task.enableStackTracking(true);
+    
+    /*
+     * Add a set of function to track on the stack across multiple continuations.
+     */
+    class Funcs {
+      public Task<Void> fooInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return barInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> barInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return bazInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> bazInBackground() {
+        return Task.<Void> forResult(null).continueWith(new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            throw new RuntimeException("An error to track.");
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+    };
+    final Funcs funcs = new Funcs();
+    
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<Void> call() throws Exception {
+        return funcs.fooInBackground().continueWith(new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            assertTrue(task.isFaulted());
+            assertTrue(task.getError() instanceof RuntimeException);
+            RuntimeException error = (RuntimeException) task.getError();
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            assertTrue(stackTrace.length > 0);
+            boolean fooFound = false;
+            boolean barFound = false;
+            boolean bazFound = false;
+            for (StackTraceElement line : stackTrace) {
+              if ("fooInBackground".equals(line.getMethodName())) {
+                fooFound = true;
+              }
+              if ("barInBackground".equals(line.getMethodName())) {
+                barFound = true;
+              }
+              if ("bazInBackground".equals(line.getMethodName())) {
+                bazFound = true;
+              }
+            }
+            assertTrue(fooFound);
+            assertTrue(barFound);
+            assertTrue(bazFound);
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testStackTrackerWithCallInBackgroundSetError() {
+    Task.enableStackTracking(true);
+
+    /*
+     * Add a set of function to track on the stack across multiple continuations.
+     */
+    class Funcs {
+      public Task<Void> fooInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return barInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> barInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return bazInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> bazInBackground() {
+        return Task.callInBackground(new Callable<Void>() {
+          @Override
+          public Void call() throws Exception {
+            return null;
+          }
+        }).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return Task.forError(new RuntimeException("An error to track."));          }
+        });
+      }
+    };
+    final Funcs funcs = new Funcs();
+    
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<Void> call() throws Exception {
+        return funcs.fooInBackground().continueWith(new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            assertTrue(task.isFaulted());
+            assertTrue(task.getError() instanceof RuntimeException);
+            RuntimeException error = (RuntimeException) task.getError();
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            assertTrue(stackTrace.length > 0);
+            boolean fooFound = false;
+            boolean barFound = false;
+            boolean bazFound = false;
+            for (StackTraceElement line : stackTrace) {
+              if ("fooInBackground".equals(line.getMethodName())) {
+                fooFound = true;
+              }
+              if ("barInBackground".equals(line.getMethodName())) {
+                barFound = true;
+              }
+              if ("bazInBackground".equals(line.getMethodName())) {
+                bazFound = true;
+              }
+            }
+            assertTrue(fooFound);
+            assertTrue(barFound);
+            assertTrue(bazFound);
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testStackTrackerWithCallInBackgroundThrows() {
+    Task.enableStackTracking(true);
+    
+    /*
+     * Add a set of function to track on the stack across multiple continuations.
+     */
+    class Funcs {
+      public Task<Void> fooInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return barInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> barInBackground() {
+        return Task.<Void> forResult(null).continueWithTask(new Continuation<Void, Task<Void>>() {
+          @Override
+          public Task<Void> then(Task<Void> task) throws Exception {
+            return bazInBackground();
+          }
+        }, Task.BACKGROUND_EXECUTOR);
+      }
+      
+      public Task<Void> bazInBackground() {
+        return Task.callInBackground(new Callable<Void>() {
+          @Override
+          public Void call() throws Exception {
+            throw new RuntimeException("An error to track.");
+          }
+        });
+      }
+    };
+    final Funcs funcs = new Funcs();
+    
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<Void> call() throws Exception {
+        return funcs.fooInBackground().continueWith(new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            assertTrue(task.isFaulted());
+            assertTrue(task.getError() instanceof RuntimeException);
+            RuntimeException error = (RuntimeException) task.getError();
+            StackTraceElement[] stackTrace = error.getStackTrace();
+            assertTrue(stackTrace.length > 0);
+            boolean fooFound = false;
+            boolean barFound = false;
+            boolean bazFound = false;
+            for (StackTraceElement line : stackTrace) {
+              if ("fooInBackground".equals(line.getMethodName())) {
+                fooFound = true;
+              }
+              if ("barInBackground".equals(line.getMethodName())) {
+                barFound = true;
+              }
+              if ("bazInBackground".equals(line.getMethodName())) {
+                bazFound = true;
+              }
+            }
+            assertTrue(fooFound);
+            assertTrue(barFound);
+            assertTrue(bazFound);
+            return null;
+          }
+        });
+      }
+    });
+  }}
