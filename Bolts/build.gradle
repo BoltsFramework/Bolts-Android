@@ -1,5 +1,13 @@
 apply plugin: 'com.android.library'
 
+dependencies {
+  provided "com.android.support:support-v4:13.0.+"
+}
+
+dependencies {
+  provided "com.android.support:support-v4:13.0.+"
+}
+
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion

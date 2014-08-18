@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 dependencies {
+    provided "com.android.support:support-v4:13.0.+"
     compile project(':Bolts')
 }
 

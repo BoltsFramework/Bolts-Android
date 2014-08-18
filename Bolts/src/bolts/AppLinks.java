@@ -9,15 +9,22 @@
  */
 package bolts;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.util.Iterator;
 /**
  * Provides a set of utility methods for working with incoming Intents that may contain App Link
  * data.
  */
 public final class AppLinks {
+  /* event name for broadcast sent when handle incoming applink intent */
+  public static final String APP_LINK_NAVIGATE_IN_EVENT_NAME = "al_nav_in";
+
   static final String KEY_NAME_APPLINK_DATA = "al_applink_data";
   static final String KEY_NAME_EXTRAS = "extras";
   static final String KEY_NAME_TARGET = "target_url";
@@ -30,7 +37,24 @@ public final class AppLinks {
    * is specified.
    */
   public static Bundle getAppLinkData(Intent intent) {
-    return intent.getBundleExtra(KEY_NAME_APPLINK_DATA);
+    Bundle applinkData = intent.getBundleExtra(KEY_NAME_APPLINK_DATA);
+    if (applinkData != null) {
+      return applinkData;
+    }
+
+    Uri intentUri = intent.getData();
+
+    String applinkDataString = intentUri.getQueryParameter(KEY_NAME_APPLINK_DATA);
+    if (applinkDataString == null) {
+      return null;
+    }
+    try {
+      JSONObject applinkJSONData = new JSONObject(applinkDataString);
+      applinkData = JSONObjectToBundle(applinkJSONData);
+      return applinkData;
+    } catch (JSONException e) {
+      return null;
+    }
   }
 
   /**
@@ -65,5 +89,40 @@ public final class AppLinks {
       }
     }
     return intent.getData();
+  }
+
+  /**
+   * Gets the target URL for an intent. If the intent is from an App Link, this will be the App Link target.
+   * Otherwise, it return null; For app link intent, this function will broadcast APP_LINK_NAVIGATE_IN_EVENT_NAME event.
+   *
+   * @param context the context this function is called within.
+   * @param intent the incoming intent.
+   * @return the target URL for the intent if applink intent; null otherwise.
+   */
+  public static Uri getTargetUrlFromInboundIntent(Context context, Intent intent) {
+    Bundle appLinkData = getAppLinkData(intent);
+    if (appLinkData != null) {
+      String targetString = appLinkData.getString(KEY_NAME_TARGET);
+      if (targetString != null) {
+        MeasurementEvent.sendEventBroadcast(context, APP_LINK_NAVIGATE_IN_EVENT_NAME, intent, null);
+        return Uri.parse(targetString);
+      }
+    }
+    return null;
+  }
+
+  private static Bundle JSONObjectToBundle(JSONObject jsonObject) throws JSONException{
+    Iterator<String> keys = jsonObject.keys();
+    Bundle retBundle = new Bundle();
+    while( keys.hasNext() ){
+      String key = keys.next();
+      Object value = jsonObject.get(key);
+      if (value instanceof JSONObject) {
+        retBundle.putBundle(key, JSONObjectToBundle((JSONObject)value));
+      } else if(value instanceof String) {
+        retBundle.putString(key, (String)value);
+      }
+    }
+    return retBundle;
   }
 }
