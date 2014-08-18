@@ -7,11 +7,14 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-package bolts;
+package bolts.android;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -32,11 +35,14 @@ import java.util.concurrent.TimeUnit;
  * size 0 and maxPoolSize is Integer.MAX_VALUE. This is dangerous because it can create an unchecked
  * amount of threads.
  */
+public final class AndroidExecutors {
 
-/** package */ final class Executors {
+  private static final AndroidExecutors INSTANCE = new AndroidExecutors();
 
-  private Executors() {
-    // do nothing
+  private final Executor uiThread;
+
+  private AndroidExecutors() {
+    uiThread = new UIThreadExecutor();
   }
 
   /**
@@ -114,6 +120,23 @@ import java.util.concurrent.TimeUnit;
   public static void allowCoreThreadTimeout(ThreadPoolExecutor executor, boolean value) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
       executor.allowCoreThreadTimeOut(value);
+    }
+  }
+
+  /**
+   * An {@link java.util.concurrent.Executor} that executes tasks on the UI thread.
+   */
+  public static Executor uiThread() {
+    return INSTANCE.uiThread;
+  }
+
+  /**
+   * An {@link java.util.concurrent.Executor} that runs tasks on the UI thread.
+   */
+  private static class UIThreadExecutor implements Executor {
+    @Override
+    public void execute(Runnable command) {
+      new Handler(Looper.getMainLooper()).post(command);
     }
   }
 }
