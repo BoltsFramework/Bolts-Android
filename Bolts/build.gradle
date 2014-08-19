@@ -86,6 +86,13 @@ uploadArchives {
                     distribution 'repo'
                 }
             }
+
+            developers {
+                developer {
+                    id 'parse'
+                    name 'Parse'
+                }
+            }
         }
     }
 }
