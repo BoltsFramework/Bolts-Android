@@ -4,12 +4,10 @@ import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
-import bolts.android.AndroidExecutors;
-
 /**
  * Collection of {@link Executor}s to use in conjunction with {@link Task}.
  */
-public final class BoltsExecutors {
+/* package */ final class BoltsExecutors {
 
   private static final BoltsExecutors INSTANCE = new BoltsExecutors();
 

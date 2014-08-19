@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-package bolts.android;
+package bolts;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  * size 0 and maxPoolSize is Integer.MAX_VALUE. This is dangerous because it can create an unchecked
  * amount of threads.
  */
-public final class AndroidExecutors {
+/* package */ final class AndroidExecutors {
 
   private static final AndroidExecutors INSTANCE = new AndroidExecutors();
 

@@ -7,7 +7,7 @@
  *  of patent rights can be found in the PATENTS file in the same directory.
  *
  */
-package bolts.android;
+package bolts;
 
 import android.os.Build;
 import android.test.InstrumentationTestCase;
