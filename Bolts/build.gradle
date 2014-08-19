@@ -1,5 +1,8 @@
 apply plugin: 'com.android.library'
 
+group = 'com.parse.bolts'
+version = '1.1.1-SNAPSHOT'
+
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -7,6 +10,8 @@ android {
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName project.version
     }
 
     sourceSets {
@@ -23,6 +28,13 @@ android.libraryVariants.all { variant ->
         dependsOn variant.javaCompile
         from variant.javaCompile.destinationDir
 
+        manifest {
+            attributes(
+                    "Bundle-Name": 'bolts-android',
+                    "Bundle-Version": project.version
+            )
+        }
+
         exclude '**/R.class'
         exclude '**/R\$*.class'
         exclude '**/Manifest.class'
@@ -37,9 +49,6 @@ android.libraryVariants.all { variant ->
 
 apply plugin: 'maven'
 apply plugin: 'signing'
-
-group = 'com.parse'
-version = '1.1.1-SNAPSHOT'
 
 def isSnapshot = version.endsWith('-SNAPSHOT')
 def ossrhUsername = hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
@@ -57,9 +66,9 @@ uploadArchives {
             authentication(userName: ossrhUsername, password: ossrhPassword)
         }
 
-        pom.artifactId = 'bolts'
         pom.project {
-            name 'Bolts'
+            name 'Bolts-Android'
+            artifactId = 'bolts-android'
             packaging 'jar'
             description 'Bolts is a collection of low-level libraries designed to make developing mobile apps easier.'
             url 'https://github.com/BoltsFramework/Bolts-Android'
