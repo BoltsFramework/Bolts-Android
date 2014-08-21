@@ -361,7 +361,7 @@ saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>()
 
 ## Handling an App Link
 
-The most common case for will be making your app receive App Links. In-linking will allow your users to quickly access the richest, most native-feeling presentation of linked content on their devices. Bolts makes it easy to handle an inbound App Link (as well as general inbound deep-links) by providing utilities for processing an incoming `Intent`.
+The most common case will be making your app receive App Links. In-linking will allow your users to quickly access the richest, most native-feeling presentation of linked content on their devices. Bolts makes it easy to handle an inbound App Link by providing utilities for processing an incoming `Intent`.
 
 For example, you can use the `AppLinks` utility class to parse an incoming `Intent` in your `Activity`:
 
@@ -374,23 +374,30 @@ protected void onCreate(Bundle savedInstanceState) {
   // to some extent.
 
   // Use the target URL from the App Link to locate content.
-  Uri targetUrl = AppLinks.getTargetUrl(getIntent());
-  String profileName = targetUrl.getLastPathSegment();
+  Uri targetUrl = AppLinks.getTargetUrlFromInboundIntent(getIntent());
+  if (targetUrl != null) {
+    // This is activity is started by app link intent.
 
-  // You can also check the query string easily.
-  String query = targetUrl.getQueryParameter("query");
+    // targetUrl is the URL shared externerly. In most cases, you embed your content identifier
+    // in this data. In this case, you can hanle with the targetUrl just as how you hanle https urls.
+    String profileName = HttpDeepLinkHandler.getProfileName(targetUrl);
 
-  // Apps that have existing deep-linking support and map their App Links to existing
-  // deep-linking functionality may instead want to perform these operations on the original
-  // data URL.
-  String profileName = getIntent().getData().getLastPathSegment();
+    // If you need to access other data you passing from the meta tag from your website or from opening app.
+    // You can get them from applinkData and referrerAppData.
+    Bundle applinkData = AppLinks.getAppLinkData(getIntent());
+    Bundle referrerAppData = applinkData.getBundle("referer_app_link");
 
-  // You can also check the query string easily.
-  String query = getIntent().getData().getQueryParameter("query");
+    // Apps can easily check the Extras and App Link data from the App Link as well.
+    String fbAccessToken = AppLinks.getAppLinkExtras("fb_access_token");
+    String refererData = AppLinks.getAppLinkExtras("referer");
+  } else {
+    // Not an applink, your existing code goes here.
 
-  // Apps can easily check the Extras and App Link data from the App Link as well.
-  String fbAccessToken = AppLinks.getAppLinkExtras("fb_access_token");
-  String refererData = AppLinks.getAppLinkExtras("referer");
+    // Apps that have existing deep-linking support and map their App Links to existing
+    // deep-linking functionality may instead want to perform these operations on the original
+    // data URL.
+    String profileName = HttpDeepLinkHandler.getProfileName(getIntent().getData());
+  }
 }
 ```
 
@@ -453,3 +460,55 @@ Alternatively, a you can swap out the default resolver to be used by the built-i
 AppLinkNavigation.setDefaultResolver(resolver);
 AppLinkNavigation.navigateInBackground(url);
 ```
+
+## Analytics
+
+Bolts introduces Measurement Event. App Links broadcast two Measurement Events to the application, which can be caught and integrated with existing analytics components in your application. ([Android Support Library v4](http://developer.android.com/tools/support-library/index.html) is required in your runtime to enable Analytics.)
+
+*  `al_nav_out` — Raised when your app sends out an App Links URL.
+*  `al_nav_in` — Raised when your app opens an incoming App Links URL or intent.
+
+### Listen for App Links Measurement Events
+
+There are other analytics tools that are integrated with Bolts' App Links events, but you can also listen for these events yourself:
+
+```java
+LocalBroadcastManager manager = LocalBroadcastManager.getInstance(context);
+manager.registerReceiver(
+    new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        String eventName = intent.getStringExtra(MeasurementEvent.MEASUREMENT_EVENT_NAME_KEY);
+        if (eventName.equals(MeasurementEvent.APP_LINK_NAVIGATE_IN_EVENT_NAME)) {
+          Bundle eventArgs = intent.getBundleExtra(MeasurementEvent.MEASUREMENT_EVENT_ARGS_KEY);
+          String targetURL = eventArgs.getString("targetURL");
+          String referrerName = eventArgs.getString("refererAppName");
+          // Integrate to your logging/analytics component.
+        }
+      }
+    },
+    new IntentFilter(MeasurementEvent.MEASUREMENT_EVENT_NOTIFICATION_NAME)
+);
+```
+
+### App Links Event Fields
+
+App Links Measurement Events sends additional information from App Links Intents in flattened string key value pairs. Here are some of the useful fields for the two events.
+
+* `al_nav_in`
+  * `inputURL`: the URL that opens the app.
+  * `inputURLScheme`: the scheme of `inputURL`.
+  * `refererURL`: the URL that the referrer app added into `al_applink_data`: `referer_app_link`.
+  * `refererAppName`: the app name that the referrer app added to `al_applink_data`: `referer_app_link`.
+  * `sourceApplication`: the bundle of referrer application.
+  * `targetURL`: the `target_url` field in `al_applink_data`.
+  * `version`: App Links API  version.
+
+* `al_nav_out`
+  * `outputURL`: the URL used to open the other app (or browser). If there is an eligible app to open, this will be the custom scheme url/intent in `al_applink_data`.
+  * `outputURLScheme`: the scheme of `outputURL`.
+  * `sourceURL`: the URL of the page hosting App Links meta tags.
+  * `sourceURLHost`: the hostname of `sourceURL`.
+  * `success`: `“1”` to indicate success in opening the App Link in another app or browser; `“0”` to indicate failure to open the App Link.
+  * `type`: `“app”` for open in app, `“web”` for open in browser; `“fail”` when the success field is `“0”`.
+  * `version`: App Links API version.
