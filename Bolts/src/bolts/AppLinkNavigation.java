@@ -48,7 +48,7 @@ public class AppLinkNavigation {
    * The result of calling {@link #navigate(android.content.Context)} on an
    * {@link bolts.AppLinkNavigation}.
    */
-  public static enum NavigationResult {
+  static enum NavigationResult {
     /**
      * Indicates that the navigation failed and no app was opened.
      */
@@ -64,10 +64,10 @@ public class AppLinkNavigation {
 
     private String code;
     private boolean succeeded;
-    public String getCode() {
+    String getCode() {
       return code;
     }
-    public boolean isSucceeded() {
+    boolean isSucceeded() {
       return succeeded;
     }
     NavigationResult(String code, boolean success) {
