@@ -18,7 +18,6 @@ For more information, see the [Bolts Android API Reference](http://boltsframewor
 
 To build a truly responsive Android application, you must keep long-running operations off of the UI thread, and be careful to avoid blocking anything the UI thread might be waiting on. This means you will need to execute various operations in the background. To make this easier, we've added a class called `Task`. A task represents an asynchronous operation. Typically, a `Task` is returned from an asynchronous function and gives the ability to continue processing the result of the task. When a task is returned from a function, it's already begun doing its job. A task is not tied to a particular threading model: it represents the work being done, not where it is executing. Tasks have many advantages over other methods of asynchronous programming, such as callbacks and `AsyncTask`.
 * They consume fewer system resources, since they don't occupy a thread while waiting on other tasks.
-* They are independent of threading model, so you don't have to worry about reaching the maximum number of allowed threads, as can happen with `AsyncTask`.
 * Performing several tasks in a row will not create nested "pyramid" code as you would get when using only callbacks.
 * Tasks are fully composable, allowing you to perform branching, parallelism, and complex error handling, without the spaghetti code of having many named callbacks.
 * You can arrange task-based code in the order that it executes, rather than having to split your logic across scattered callback functions.
