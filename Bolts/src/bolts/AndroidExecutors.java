@@ -59,7 +59,6 @@ import java.util.concurrent.TimeUnit;
   /* package */ static final int CORE_POOL_SIZE = CPU_COUNT + 1;
   /* package */ static final int MAX_POOL_SIZE = CPU_COUNT * 2 + 1;
   /* package */ static final long KEEP_ALIVE_TIME = 1L;
-  /* package */ static final int MAX_QUEUE_SIZE = 128;
 
   /**
    * Creates a proper Cached Thread Pool. Tasks will reuse cached threads if available
@@ -76,7 +75,7 @@ import java.util.concurrent.TimeUnit;
         CORE_POOL_SIZE,
         MAX_POOL_SIZE,
         KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-        new LinkedBlockingQueue<Runnable>(MAX_QUEUE_SIZE));
+        new LinkedBlockingQueue<Runnable>());
 
     allowCoreThreadTimeout(executor, true);
 
@@ -99,7 +98,7 @@ import java.util.concurrent.TimeUnit;
             CORE_POOL_SIZE,
             MAX_POOL_SIZE,
             KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>(MAX_QUEUE_SIZE),
+            new LinkedBlockingQueue<Runnable>(),
             threadFactory);
 
     allowCoreThreadTimeout(executor, true);
