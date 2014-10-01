@@ -23,7 +23,6 @@ public class AndroidExecutorsTest extends InstrumentationTestCase {
   private static final int CORE_POOL_SIZE = AndroidExecutors.CORE_POOL_SIZE;
   private static final int MAX_POOL_SIZE = AndroidExecutors.MAX_POOL_SIZE;
   private static final int THREAD_TIMEOUT = (int)(AndroidExecutors.KEEP_ALIVE_TIME * 1000 * 1.1);
-  private static final int MAX_QUEUE_SIZE = AndroidExecutors.MAX_QUEUE_SIZE;
 
   LinkedList<CountDownLatch> corePoolAwaitLatchStack;
   LinkedList<CountDownLatch> corePoolEndLatchStack;
@@ -55,50 +54,6 @@ public class AndroidExecutorsTest extends InstrumentationTestCase {
     assertEquals(0, executor.getQueue().size());
 
     // Empty core pool
-    popTasks(true);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-      assertEquals(0, executor.getPoolSize());
-    } else {
-      assertEquals(CORE_POOL_SIZE, executor.getPoolSize());
-    }
-  }
-
-  /**
-   * Test that the queue gets filled and throws if filled over the max.
-   *
-   * Note: Core thread pool timeout is only available on android-9+
-   *
-   * @throws InterruptedException
-   */
-  public void testNewCachedThreadPoolQueue() throws InterruptedException {
-    ThreadPoolExecutor executor = (ThreadPoolExecutor) AndroidExecutors.newCachedThreadPool();
-    assertEquals(0, executor.getPoolSize());
-    pushTasks(executor, CORE_POOL_SIZE, true);
-
-    try {
-      // Fill queue to max
-      pushTasks(executor, MAX_QUEUE_SIZE, false);
-      assertEquals(CORE_POOL_SIZE, executor.getPoolSize());
-      assertEquals(MAX_QUEUE_SIZE, executor.getQueue().size());
-
-      // Overflow queue
-      pushTasks(executor, MAX_POOL_SIZE, false);
-      assertEquals(MAX_POOL_SIZE, executor.getPoolSize());
-      assertEquals(MAX_QUEUE_SIZE, executor.getQueue().size());
-
-      executor.execute(newWaitRunnable(null, null, null));
-      fail("Failed to reject operation due to full queue");
-    } catch (RejectedExecutionException e) {
-      // Do we still have our queue?
-      assertEquals(MAX_POOL_SIZE, executor.getPoolSize());
-      assertEquals(MAX_QUEUE_SIZE, executor.getQueue().size());
-    } finally {
-      // empty overflow
-      popTasks(false);
-      // empty queue
-      popTasks(false);
-    }
-
     popTasks(true);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
       assertEquals(0, executor.getPoolSize());
