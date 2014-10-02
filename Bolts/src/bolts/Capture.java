@@ -31,4 +31,9 @@ public class Capture<T> {
   public void set(T value) {
     this.value = value;
   }
+
+  @Override
+  public String toString() {
+    return value.toString();
+  }
 }
