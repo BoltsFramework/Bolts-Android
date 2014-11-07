@@ -41,7 +41,7 @@ public class AggregateException extends Exception {
   }
 
   /**
-   * @deprecated Please use {@link AggregateException(Throwable...)} instead.
+   * @deprecated Please use {@link #AggregateException(String, Throwable[])} instead.
    */
   @Deprecated
   public AggregateException(List<Exception> errors) {
@@ -61,6 +61,8 @@ public class AggregateException extends Exception {
     for (Throwable cause : causes) {
       if (cause instanceof Exception) {
         errors.add((Exception) cause);
+      } else {
+        errors.add(new Exception(cause));
       }
     }
     return errors;
