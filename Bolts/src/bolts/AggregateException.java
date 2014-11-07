@@ -9,26 +9,67 @@
  */
 package bolts;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Aggregates Exceptions that may be thrown in the process of a task's execution.
+ * Aggregates multiple errors that may be thrown in the process of a task's execution.
+ *
+ * @see Task#whenAll(java.util.Collection)
  */
 public class AggregateException extends Exception {
   private static final long serialVersionUID = 1L;
 
-  private List<Exception> errors;
+  private Throwable[] causes;
 
-  public AggregateException(List<Exception> errors) {
-    super("There were multiple errors.");
+  /**
+   * Constructs a new {@code AggregateException} with the current stack trace, the
+   * specified detail message and the specified causes.
+   *
+   * The stacktrace will show that this {@code AggregateException} will be caused by the first
+   * exception and all of the causes can be accessed via {@link #getCauses()}.
+   *
+   * @param detailMessage
+   *            the detail message for this exception.
+   * @param causes
+   *            the causes of this exception.
+   */
+  public AggregateException(String detailMessage, Throwable[] causes) {
+    super(detailMessage, causes != null && causes.length > 0 ? causes[0] : null);
 
-    this.errors = errors;
+    this.causes = causes != null && causes.length > 0 ? causes : null;
   }
 
   /**
-   * Returns the list of errors that this exception encapsulates.
+   * @deprecated Please use {@link AggregateException(Throwable...)} instead.
    */
+  @Deprecated
+  public AggregateException(List<Exception> errors) {
+    this("There were multiple errors.", errors.toArray(new Exception[errors.size()]));
+  }
+
+  /**
+   * @deprecated Please use {@link #getCauses()} instead.
+   */
+  @Deprecated
   public List<Exception> getErrors() {
+    List<Exception> errors = new ArrayList<Exception>();
+    if (causes == null) {
+      return errors;
+    }
+
+    for (Throwable cause : causes) {
+      if (cause instanceof Exception) {
+        errors.add((Exception) cause);
+      }
+    }
     return errors;
+  }
+
+  /**
+   * Returns the causes of this {@code AggregateException}, or {@code null} if there are no causes.
+   */
+  public Throwable[] getCauses() {
+    return causes;
   }
 }

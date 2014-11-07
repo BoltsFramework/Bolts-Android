@@ -295,7 +295,8 @@ public class TaskTest extends InstrumentationTestCase {
   }
 
   public void testWhenAllTwoErrors() {
-    final Exception error = new RuntimeException("This task failed.");
+    final Exception error0 = new RuntimeException("This task failed.");
+    final Exception error1 = new RuntimeException("This task failed.");
 
     runTaskTest(new Callable<Task<?>>() {
       @Override
@@ -307,8 +308,10 @@ public class TaskTest extends InstrumentationTestCase {
             @Override
             public Void call() throws Exception {
               Thread.sleep((long) (Math.random() * 100));
-              if (number == 10 || number == 11) {
-                throw error;
+              if (number == 10) {
+                throw error0;
+              } else if (number == 11) {
+                throw error1;
               }
               return null;
             }
@@ -323,9 +326,15 @@ public class TaskTest extends InstrumentationTestCase {
             assertFalse(task.isCancelled());
 
             assertTrue(task.getError() instanceof AggregateException);
+            assertEquals(2, ((AggregateException) task.getError()).getCauses().length);
+            assertEquals(error0, ((AggregateException) task.getError()).getCauses()[0]);
+            assertEquals(error1, ((AggregateException) task.getError()).getCauses()[1]);
+            assertEquals(error0, task.getError().getCause());
+
+            // Make sure deprecated methods still work
             assertEquals(2, ((AggregateException) task.getError()).getErrors().size());
-            assertEquals(error, ((AggregateException) task.getError()).getErrors().get(0));
-            assertEquals(error, ((AggregateException) task.getError()).getErrors().get(1));
+            assertEquals(error0, ((AggregateException) task.getError()).getErrors().get(0));
+            assertEquals(error1, ((AggregateException) task.getError()).getErrors().get(1));
 
             for (Task<Void> t : tasks) {
               assertTrue(t.isCompleted());
