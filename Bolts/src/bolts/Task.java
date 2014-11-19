@@ -210,6 +210,11 @@ public class Task<TResult> {
 
   /**
    * Creates a task that completes when all of the provided tasks are complete.
+   *
+   * @param tasks The tasks that the return value will wait for before completing.
+   * @return A Task that will resolve to {@code null} when all the tasks are resolved. If a single
+   * task fails, it will resolve to that error. If multiple tasks fail, it will resolve to an
+   * {@link AggregateException} of all the errors.
    */
   public static Task<Void> whenAll(Collection<? extends Task<?>> tasks) {
     if (tasks.size() == 0) {
@@ -243,7 +248,11 @@ public class Task<TResult> {
               if (errors.size() == 1) {
                 allFinished.setError(errors.get(0));
               } else {
-                allFinished.setError(new AggregateException(errors));
+                Throwable[] throwables = errors.toArray(new Throwable[errors.size()]);
+                Exception error = new AggregateException(
+                    String.format("There were %d errors.", errors.size()),
+                    throwables);
+                allFinished.setError(error);
               }
             } else if (isCancelled.get()) {
               allFinished.setCancelled();

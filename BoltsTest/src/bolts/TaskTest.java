@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.test.InstrumentationTestCase;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
@@ -295,7 +296,8 @@ public class TaskTest extends InstrumentationTestCase {
   }
 
   public void testWhenAllTwoErrors() {
-    final Exception error = new RuntimeException("This task failed.");
+    final Exception error0 = new RuntimeException("This task failed (0).");
+    final Exception error1 = new RuntimeException("This task failed (1).");
 
     runTaskTest(new Callable<Task<?>>() {
       @Override
@@ -306,9 +308,11 @@ public class TaskTest extends InstrumentationTestCase {
           Task<Void> task = Task.callInBackground(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-              Thread.sleep((long) (Math.random() * 100));
-              if (number == 10 || number == 11) {
-                throw error;
+              Thread.sleep((long) (number * 10));
+              if (number == 10) {
+                throw error0;
+              } else if (number == 11) {
+                throw error1;
               }
               return null;
             }
@@ -323,9 +327,10 @@ public class TaskTest extends InstrumentationTestCase {
             assertFalse(task.isCancelled());
 
             assertTrue(task.getError() instanceof AggregateException);
-            assertEquals(2, ((AggregateException) task.getError()).getErrors().size());
-            assertEquals(error, ((AggregateException) task.getError()).getErrors().get(0));
-            assertEquals(error, ((AggregateException) task.getError()).getErrors().get(1));
+            assertEquals(2, ((AggregateException) task.getError()).getCauses().length);
+            assertEquals(error0, ((AggregateException) task.getError()).getCauses()[0]);
+            assertEquals(error1, ((AggregateException) task.getError()).getCauses()[1]);
+            assertEquals(error0, task.getError().getCause());
 
             for (Task<Void> t : tasks) {
               assertTrue(t.isCompleted());
@@ -413,7 +418,7 @@ public class TaskTest extends InstrumentationTestCase {
   public void testOnSuccess() {
     Continuation<Integer, Integer> continuation = new Continuation<Integer, Integer>() {
       public Integer then(Task<Integer> task) {
-        return task.getResult().intValue() + 1;
+        return task.getResult() + 1;
       }
     };
     Task<Integer> complete = Task.forResult(5).onSuccess(continuation);
@@ -439,7 +444,7 @@ public class TaskTest extends InstrumentationTestCase {
   public void testOnSuccessTask() {
     Continuation<Integer, Task<Integer>> continuation = new Continuation<Integer, Task<Integer>>() {
       public Task<Integer> then(Task<Integer> task) {
-        return Task.forResult(task.getResult().intValue() + 1);
+        return Task.forResult(task.getResult() + 1);
       }
     };
     Task<Integer> complete = Task.forResult(5).onSuccessTask(continuation);
@@ -506,5 +511,32 @@ public class TaskTest extends InstrumentationTestCase {
         });
       }
     });
+  }
+
+  @SuppressWarnings("deprecation")
+  public void testDeprecatedAggregateExceptionMethods() {
+    final Exception error0 = new Exception("This is an exception (0).");
+    final Exception error1 = new Exception("This is an exception (1).");
+    final Error error2 = new Error("This is an error.");
+
+    List<Exception> exceptions = new ArrayList<Exception>();
+    exceptions.add(error0);
+    exceptions.add(error1);
+
+    // Test old functionality
+    AggregateException aggregate = new AggregateException(exceptions);
+    assertEquals("There were multiple errors.", aggregate.getMessage());
+    assertEquals(2, aggregate.getErrors().size());
+    assertEquals(error0, aggregate.getErrors().get(0));
+    assertEquals(error1, aggregate.getErrors().get(1));
+
+    // Test deprecated getErrors method returns sane results with non-Exceptions
+    aggregate = new AggregateException("message", new Throwable[]{ error0, error1, error2 });
+    assertEquals("message", aggregate.getMessage());
+    assertEquals(3, aggregate.getErrors().size());
+    assertEquals(error0, aggregate.getErrors().get(0));
+    assertEquals(error1, aggregate.getErrors().get(1));
+    assertNotSame(error2, aggregate.getErrors().get(2));
+    assertEquals(error2, aggregate.getErrors().get(2).getCause());
   }
 }
