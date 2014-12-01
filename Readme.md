@@ -193,17 +193,17 @@ With these tools, it's easy to make your own asynchronous functions that return 
 
 ```java
 public Task<Void> fetchAsync(ParseObject obj) {
-  Task<Void>.TaskCompletionSource task = Task.<Void> create();
+  final Task<ParseObject>.TaskCompletionSource tcs = Task.create();
   obj.fetchInBackground(new GetCallback() {
     public void done(ParseObject object, ParseException e) {
      if (e == null) {
-       task.setResult(object);
+       tcs.setResult(object);
      } else {
-       task.setError(e);
+       tcs.setError(e);
      }
    }
   });
-  return task.getTask();
+  return tcs.getTask();
 }
 ```
 
@@ -379,8 +379,8 @@ protected void onCreate(Bundle savedInstanceState) {
   if (targetUrl != null) {
     // This is activity is started by app link intent.
 
-    // targetUrl is the URL shared externerly. In most cases, you embed your content identifier
-    // in this data. In this case, you can hanle with the targetUrl just as how you hanle https urls.
+    // targetUrl is the URL shared externally. In most cases, you embed your content identifier
+    // in this data. In this case, you can handle with the targetUrl just as how you handle https urls.
     String profileName = HttpDeepLinkHandler.getProfileName(targetUrl);
 
     // If you need to access other data you passing from the meta tag from your website or from opening app.
