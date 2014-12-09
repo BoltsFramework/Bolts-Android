@@ -212,9 +212,9 @@ public class Task<TResult> {
    * Creates a task that completes when all of the provided tasks are complete.
    *
    * @param tasks The tasks that the return value will wait for before completing.
-   * @return A Task that will resolve to {@code null} when all the tasks are resolved. If a single
-   * task fails, it will resolve to that error. If multiple tasks fail, it will resolve to an
-   * {@link AggregateException} of all the errors.
+   * @return A Task that will resolve to {@code Void} when all the tasks are resolved. If a single
+   * task fails, it will resolve to that {@link java.lang.Exception}. If multiple tasks fail, it
+   * will resolve to an {@link AggregateException} of all the {@link java.lang.Exception}s.
    */
   public static Task<Void> whenAll(Collection<? extends Task<?>> tasks) {
     if (tasks.size() == 0) {
@@ -222,7 +222,7 @@ public class Task<TResult> {
     }
 
     final Task<Void>.TaskCompletionSource allFinished = Task.create();
-    final ArrayList<Exception> errors = new ArrayList<Exception>();
+    final ArrayList<Exception> causes = new ArrayList<Exception>();
     final Object errorLock = new Object();
     final AtomicInteger count = new AtomicInteger(tasks.size());
     final AtomicBoolean isCancelled = new AtomicBoolean(false);
@@ -235,7 +235,7 @@ public class Task<TResult> {
         public Void then(Task<Object> task) {
           if (task.isFaulted()) {
             synchronized (errorLock) {
-              errors.add(task.getError());
+              causes.add(task.getError());
             }
           }
 
@@ -244,13 +244,13 @@ public class Task<TResult> {
           }
 
           if (count.decrementAndGet() == 0) {
-            if (errors.size() != 0) {
-              if (errors.size() == 1) {
-                allFinished.setError(errors.get(0));
+            if (causes.size() != 0) {
+              if (causes.size() == 1) {
+                allFinished.setError(causes.get(0));
               } else {
-                Throwable[] throwables = errors.toArray(new Throwable[errors.size()]);
+                Throwable[] throwables = causes.toArray(new Throwable[causes.size()]);
                 Exception error = new AggregateException(
-                    String.format("There were %d errors.", errors.size()),
+                    String.format("There were %d exceptions.", causes.size()),
                     throwables);
                 allFinished.setError(error);
               }
@@ -370,8 +370,8 @@ public class Task<TResult> {
   }
 
   /**
-   * Runs a continuation when a task completes successfully, forwarding along errors or
-   * cancellation.
+   * Runs a continuation when a task completes successfully, forwarding along
+   * {@link java.lang.Exception} or cancellation.
    */
   public <TContinuationResult> Task<TContinuationResult> onSuccess(
       final Continuation<TResult, TContinuationResult> continuation, Executor executor) {
@@ -390,8 +390,8 @@ public class Task<TResult> {
   }
 
   /**
-   * Runs a continuation when a task completes successfully, forwarding along errors or
-   * cancellation.
+   * Runs a continuation when a task completes successfully, forwarding along
+   * {@link java.lang.Exception}s or cancellation.
    */
   public <TContinuationResult> Task<TContinuationResult> onSuccess(
       final Continuation<TResult, TContinuationResult> continuation) {
@@ -399,8 +399,8 @@ public class Task<TResult> {
   }
 
   /**
-   * Runs a continuation when a task completes successfully, forwarding along errors or
-   * cancellation.
+   * Runs a continuation when a task completes successfully, forwarding along
+   * {@link java.lang.Exception}s or cancellation.
    */
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
       final Continuation<TResult, Task<TContinuationResult>> continuation, Executor executor) {
@@ -419,8 +419,8 @@ public class Task<TResult> {
   }
 
   /**
-   * Runs a continuation when a task completes successfully, forwarding along errors or
-   * cancellation.
+   * Runs a continuation when a task completes successfully, forwarding along
+   * {@link java.lang.Exception}s or cancellation.
    */
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
       final Continuation<TResult, Task<TContinuationResult>> continuation) {

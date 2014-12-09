@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Aggregates multiple errors that may be thrown in the process of a task's execution.
+ * Aggregates multiple {@code Throwable}s that may be thrown in the process of a task's execution.
  *
  * @see Task#whenAll(java.util.Collection)
  */
