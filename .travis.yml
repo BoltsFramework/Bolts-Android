@@ -1,16 +1,19 @@
 language: android
+sudo: false
 env:
   matrix:
-    - ANDROID_SDKS=android-21,sysimg-21  ANDROID_TARGET=android-21  ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-21  ANDROID_ABI=armeabi-v7a
 
 android:
   components:
-    - build-tools-21.1.1
-
-before_install:
-  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
-  - emulator -avd test -no-skin -no-audio -no-window &
+    - build-tools-21.1.2
+    - android-21
 
 before_script:
-  - adb wait-for-device
+  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
+  - emulator -avd test -no-skin -no-audio -no-window &
+  - android-wait-for-emulator
   - adb shell input keyevent 82 &
+
+script:
+  - ./gradlew build connectedCheck --info
