@@ -20,8 +20,8 @@ public class CancellationTokenTest extends InstrumentationTestCase {
 
     try {
       token.throwIfCancellationRequested();
-      fail(TaskCancelledException.class.getSimpleName() + " should be thrown");
-    } catch (TaskCancelledException e) {
+      fail(CancelledException.class.getSimpleName() + " should be thrown");
+    } catch (CancelledException e) {
       assertEquals(token, e.getToken());
     }
   }

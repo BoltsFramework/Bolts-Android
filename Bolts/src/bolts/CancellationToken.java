@@ -7,11 +7,11 @@ import java.util.Map;
 
 /**
  * Used to control the cancellation of asynchronous operations or tasks.
- *
+ * <p/>
  * Create an instance of {@code CancellationToken.Source} and pass the token returned from
  * {@code #getToken()} to the asynchronous operation(s). Call
  * {@code CancellationToken.Source#cancel()} to cancel the operations.
- *
+ * <p/>
  * A {@code CancellationToken} can only be cancelled once - it should not be passed to future operations
  * once cancelled.
  */
@@ -33,13 +33,15 @@ public class CancellationToken {
   }
 
   /**
-   * Throws an exception if the user has a requested this token be cancelled.
-   * @throws TaskCancelledException
+   * Throws an exception if the user has a requested this token be cancelled. May be used to stop
+   * execution of a thread or runnable.
+   *
+   * @throws CancelledException
    */
-  public void throwIfCancellationRequested() throws TaskCancelledException {
+  public void throwIfCancellationRequested() throws CancelledException {
     synchronized (this) {
       if (cancellationRequested) {
-        throw new TaskCancelledException(this);
+        throw new CancelledException(this);
       }
     }
   }
@@ -47,8 +49,11 @@ public class CancellationToken {
   /**
    * Register a listener to be notified when this token is cancelled.
    * If another listener was previously registered with the specified {@code id} then this listener replaces that one.
-   * @param id the listener ID that can be used to unregister the listener later.
-   * @param listener the listener to be notified.
+   *
+   * @param id
+   *          the listener ID that can be used to unregister the listener later.
+   * @param listener
+   *          the listener to be notified.
    */
   public void register(ListenerId id, Listener listener) {
     synchronized (this) {
@@ -60,6 +65,7 @@ public class CancellationToken {
    * Unregister a previously a registered {@code Listener}. This may be useful if the task completes successfully or is
    * cancelled in another manner in order to reclaim memory.
    * Has no effect if the listener was previously unregistered or never registered.
+   *
    * @param id the listener ID that was previously used when registering the listener.
    */
   public void unregister(ListenerId id) {
@@ -97,6 +103,7 @@ public class CancellationToken {
   public interface Listener {
     /**
      * The user has requested cancellation of the operation by cancelling the token.
+     *
      * @param token the token that was cancelled.
      */
     void onCancellationRequested(CancellationToken token);
