@@ -12,6 +12,7 @@ do they require having a Parse or Facebook developer account.
 Bolts includes:
 
 * "Tasks", which make organization of complex asynchronous code more manageable. A task is kind of like a JavaScript Promise, but available for iOS and Android.
+* "CancellationTokens", which make cancellation of multiple asynchronous operations easy. CancellationTokens naturally compliment tasks, but may also be used with other asynchronous primitives such as callbacks.
 * An implementation of the [App Links protocol](http://www.applinks.org), helping you link to content in other apps and handle incoming deep-links.
 
 For more information, see the [Bolts Android API Reference](http://boltsframework.github.io/docs/android/).
@@ -354,6 +355,104 @@ saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>()
     return successfulSaveCount.get();
   }
 });
+```
+
+# CancellationTokens
+
+## Cancelling Operations
+
+To cancel an asynchronous call using a token you must first modify the method to accept a `CancellationToken`
+and use the `throwIfCancellationRequested()` and `isCancellationRequested()` methods to halt the operation
+once cancelled.
+
+```java
+/**
+ Gets an Integer asynchronously.
+ */
+public Task<Integer> getIntAsync(CancellationToken token) {
+  // Create a new Task
+  Task<Integer>.CompletionSource taskSource = Task.create();
+
+  new Thread() {
+    @Override
+    public void run() {
+      // Check if cancelled at start
+      token.throwIfCancellationRequested();
+
+      int result = 0;
+      while (result < 100) {
+        // Poll isCancellationRequested in a loop
+        if (token.isCancellationRequested()) {
+          token.throwIfCancellationRequested();
+        }
+        result++;
+      }
+      taskSource.setResult(result);
+    }
+  }.start();
+
+  return taskSource.getTask();
+}
+
+```
+
+To actually cancel the operation you create a `CancellationToken.Source`, pass the token to any methods
+you may want to cancel and then call `cancel()` on the source when cancellation is required. This will
+cancel any ongoing operations that the token was supplied to.
+
+
+```java
+CancellationToken.Source tokenSource = new CancellationToken.Source();
+
+Task<Integer> stringTask = getIntAsync(tokenSource.getToken());
+
+tokenSource.cancel();
+```
+
+## Adapt Existing Asynchronous Methods to Tasks and CancellationTokens
+
+Suppose you have an existing method of the form
+
+```java
+public Operation<String> getStringAsyncOperation(Callback callback);
+```
+
+where `Operation` has some `cancel()` method and callback is a simple one-method interface that
+receives a result or an error.
+
+You can adapt this to Tasks and CancellationTokens very easily and have a consistent set of
+asynchronous operations.
+
+```java
+public Task<String> getStringAsyncTask(CancellationToken token) {
+  Task<String> taskSource = Task.create();
+  CancellationToken.ListenerId listenerId = new CancellationToken.ListenerId();
+
+  final Operation<String> operation = getStringAsyncOperation(new Callback() {
+    @Override
+    public void onOperationComplete(String result, Exception error) {
+      // Release memory associated with cancellation listener (holds onto operation).
+      token.unregister(listenerId);
+
+      if (error == null) {
+        taskSource.trySetResult(result);
+      } else {
+        taskSource.trySetError(error);
+      }
+    }
+  });
+
+  token.register(listenerId, new CancellationToken.Listener() {
+    @Override
+    public void onCancellationRequested(CancellationToken token) {
+      operation.cancel();
+      // Task may have already completed.
+      taskSource.trySetCancelled();
+    }
+  }
+
+  return taskSource.getTask();
+}
 ```
 
 # App Links
