@@ -116,6 +116,28 @@ public class TaskTest extends InstrumentationTestCase {
     assertEquals(3, third.getResult().intValue());
   }
 
+  public void testSynchronousCancellation() {
+    Task<Integer> first = Task.forResult(1);
+    Task<Integer> second = first.continueWith(new Continuation<Integer, Integer>() {
+      public Integer then(Task<Integer> task) {
+        throw new CancellationException();
+      }
+    });
+    assertTrue(first.isCompleted());
+    assertTrue(second.isCancelled());
+  }
+
+  public void testSynchronousTaskCancellation() {
+    Task<Integer> first = Task.forResult(1);
+    Task<Integer> second = first.continueWithTask(new Continuation<Integer, Task<Integer>>() {
+      public Task<Integer> then(Task<Integer> task) {
+        throw new CancellationException();
+      }
+    });
+    assertTrue(first.isCompleted());
+    assertTrue(second.isCancelled());
+  }
+
   public void testBackgroundCall() {
     runTaskTest(new Callable<Task<?>>() {
       public Task<?> call() throws Exception {
@@ -186,6 +208,23 @@ public class TaskTest extends InstrumentationTestCase {
           public Void then(Task<Integer> task) {
             assertTrue(task.isFaulted());
             assertTrue(task.getError() instanceof IllegalStateException);
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testBackgroundCancellation() {
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<?> call() throws Exception {
+        return Task.callInBackground(new Callable<Void>() {
+          public Void call() throws Exception {
+            throw new CancellationException();
+          }
+        }).continueWith(new Continuation<Void, Void>() {
+          public Void then(Task<Void> task) {
+            assertTrue(task.isCancelled());
             return null;
           }
         });
