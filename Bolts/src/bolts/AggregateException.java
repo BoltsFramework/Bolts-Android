@@ -9,7 +9,11 @@
  */
 package bolts;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,45 +24,99 @@ import java.util.List;
 public class AggregateException extends Exception {
   private static final long serialVersionUID = 1L;
 
-  private Throwable[] causes;
+  private static final String DEFAULT_MESSAGE = "There were multiple errors.";
+
+  private List<Throwable> innerThrowables;
 
   /**
-   * Constructs a new {@code AggregateException} with the current stack trace, the
-   * specified detail message and the specified causes.
-   *
-   * The stacktrace will show that this {@code AggregateException} will be caused by the first
-   * exception and all of the causes can be accessed via {@link #getCauses()}.
+   * Constructs a new {@code AggregateException} with the current stack trace, the specified detail
+   * message and with references to the inner throwables that are the cause of this exception.
    *
    * @param detailMessage
-   *            the detail message for this exception.
-   * @param causes
-   *            the causes of this exception.
+   *            The detail message for this exception.
+   * @param innerThrowables
+   *            The exceptions that are the cause of the current exception.
    */
-  public AggregateException(String detailMessage, Throwable[] causes) {
-    super(detailMessage, causes != null && causes.length > 0 ? causes[0] : null);
+  public AggregateException(String detailMessage, Throwable[] innerThrowables) {
+    this(detailMessage, Arrays.asList(innerThrowables));
+  }
 
-    this.causes = causes != null && causes.length > 0 ? causes : null;
+
+  /**
+   * Constructs a new {@code AggregateException} with the current stack trace, the specified detail
+   * message and with references to the inner throwables that are the cause of this exception.
+   *
+   * @param detailMessage
+   *            The detail message for this exception.
+   * @param innerThrowables
+   *            The exceptions that are the cause of the current exception.
+   */
+  public AggregateException(String detailMessage, List<? extends Throwable> innerThrowables) {
+    super(detailMessage,
+        innerThrowables != null && innerThrowables.size() > 0 ? innerThrowables.get(0) : null);
+    this.innerThrowables = Collections.unmodifiableList(innerThrowables);
   }
 
   /**
-   * @deprecated Please use {@link #AggregateException(String, Throwable[])} instead.
+   * Constructs a new {@code AggregateException} with the current stack trace and with references to
+   * the inner throwables that are the cause of this exception.
+   *
+   * @param innerThrowables
+   *            The exceptions that are the cause of the current exception.
    */
-  @Deprecated
-  public AggregateException(List<Exception> errors) {
-    this("There were multiple errors.", errors.toArray(new Exception[errors.size()]));
+  public AggregateException(List<? extends Throwable> innerThrowables) {
+    this(DEFAULT_MESSAGE, innerThrowables);
   }
 
   /**
-   * @deprecated Please use {@link #getCauses()} instead.
+   * Returns a read-only {@link List} of the {@link Throwable} instances that caused the current
+   * exception.
+   */
+  public List<Throwable> getInnerThrowables() {
+    return innerThrowables;
+  }
+
+  @Override
+  public void printStackTrace(PrintStream err) {
+    super.printStackTrace(err);
+
+    int currentIndex = -1;
+    for (Throwable throwable : innerThrowables) {
+      err.append("\n");
+      err.append("  Inner throwable #");
+      err.append(Integer.toString(++currentIndex));
+      err.append(": ");
+      throwable.printStackTrace(err);
+      err.append("\n");
+    }
+  }
+
+  @Override
+  public void printStackTrace(PrintWriter err) {
+    super.printStackTrace(err);
+
+    int currentIndex = -1;
+    for (Throwable throwable : innerThrowables) {
+      err.append("\n");
+      err.append("  Inner throwable #");
+      err.append(Integer.toString(++currentIndex));
+      err.append(": ");
+      throwable.printStackTrace(err);
+      err.append("\n");
+    }
+  }
+
+  /**
+   * @deprecated Please use {@link #getInnerThrowables()} instead.
    */
   @Deprecated
   public List<Exception> getErrors() {
     List<Exception> errors = new ArrayList<Exception>();
-    if (causes == null) {
+    if (innerThrowables == null) {
       return errors;
     }
 
-    for (Throwable cause : causes) {
+    for (Throwable cause : innerThrowables) {
       if (cause instanceof Exception) {
         errors.add((Exception) cause);
       } else {
@@ -69,9 +127,11 @@ public class AggregateException extends Exception {
   }
 
   /**
-   * Returns the causes of this {@code AggregateException}, or {@code null} if there are no causes.
+   * @deprecated Please use {@link #getInnerThrowables()} instead.
    */
+  @Deprecated
   public Throwable[] getCauses() {
-    return causes;
+    return innerThrowables.toArray(new Throwable[innerThrowables.size()]);
   }
+
 }
