@@ -222,6 +222,14 @@ public class TaskTest extends InstrumentationTestCase {
     });
   }
 
+  public void testWhenAllNoTasks() {
+    Task<Void> task = Task.whenAll(new ArrayList<Task<Void>>());
+
+    assertTrue(task.isCompleted());
+    assertFalse(task.isCancelled());
+    assertFalse(task.isFaulted());
+  }
+
   public void testWhenAllSuccess() {
     runTaskTest(new Callable<Task<?>>() {
       @Override
@@ -376,6 +384,52 @@ public class TaskTest extends InstrumentationTestCase {
             for (Task<Void> t : tasks) {
               assertTrue(t.isCompleted());
             }
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testWhenAllResultNoTasks() {
+    Task<List<Void>> task = Task.whenAllResult(new ArrayList<Task<Void>>());
+
+    assertTrue(task.isCompleted());
+    assertFalse(task.isCancelled());
+    assertFalse(task.isFaulted());
+    assertTrue(task.getResult().isEmpty());
+  }
+
+  public void testWhenAllResultSuccess() {
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final List<Task<Integer>> tasks = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+          final int number = (i + 1);
+          Task<Integer> task = Task.callInBackground(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+              Thread.sleep((long) (Math.random() * 100));
+              return number;
+            }
+          });
+          tasks.add(task);
+        }
+        return Task.whenAllResult(tasks).continueWith(new Continuation<List<Integer>, Void>() {
+          @Override
+          public Void then(Task<List<Integer>> task) {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(tasks.size(), task.getResult().size());
+
+            for (int i = 0; i < tasks.size(); i++) {
+              Task<Integer> t = tasks.get(i);
+              assertTrue(t.isCompleted());
+              assertEquals(t.getResult(), task.getResult().get(i));
+            }
+
             return null;
           }
         });
