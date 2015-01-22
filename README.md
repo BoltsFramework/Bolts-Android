@@ -380,10 +380,9 @@ protected void onCreate(Bundle savedInstanceState) {
     // This is activity is started by app link intent.
 
     // targetUrl is the URL shared externally. In most cases, you embed your content identifier
-    // in this data. In this case, you can handle with the targetUrl just as how you handle https urls.
-    String profileName = HttpDeepLinkHandler.getProfileName(targetUrl);
+    // in this data.
 
-    // If you need to access other data you passing from the meta tag from your website or from opening app.
+    // If you need to access data you passing from the meta tag from your website or from opening app.
     // You can get them from applinkData and referrerAppData.
     Bundle applinkData = AppLinks.getAppLinkData(getIntent());
     Bundle referrerAppData = applinkData.getBundle("referer_app_link");
@@ -393,11 +392,6 @@ protected void onCreate(Bundle savedInstanceState) {
     String refererData = AppLinks.getAppLinkExtras("referer");
   } else {
     // Not an applink, your existing code goes here.
-
-    // Apps that have existing deep-linking support and map their App Links to existing
-    // deep-linking functionality may instead want to perform these operations on the original
-    // data URL.
-    String profileName = HttpDeepLinkHandler.getProfileName(getIntent().getData());
   }
 }
 ```
