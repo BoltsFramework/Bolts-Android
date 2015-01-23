@@ -11,6 +11,7 @@ package bolts;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -210,11 +211,65 @@ public class Task<TResult> {
 
   /**
    * Creates a task that completes when all of the provided tasks are complete.
+   * <p/>
+   * If any of the supplied tasks completes in a faulted state, the returned task will also complete
+   * in a faulted state, where its exception will resolve to that {@link java.lang.Exception} if a
+   * single task fails or an {@link AggregateException} of all the {@link java.lang.Exception}s
+   * if multiple tasks fail.
+   * <p/>
+   * If none of the supplied tasks faulted but at least one of them was cancelled, the returned
+   * task will end as cancelled.
+   * <p/>
+   * If none of the tasks faulted and none of the tasks were cancelled, the resulting task will end
+   * completed. The result of the returned task will be set to a list containing all of the results
+   * of the supplied tasks in the same order as they were provided (e.g. if the input tasks collection
+   * contained t1, t2, t3, the output task's result will return an {@code List&lt;TResult&gt;}
+   * where {@code list.get(0) == t1.getResult(), list.get(1) == t2.getResult(), and
+   * list.get(2) == t3.getResult()}).
+   * <p/>
+   * If the supplied collection contains no tasks, the returned task will immediately transition to
+   * a completed state before it's returned to the caller.
+   * The returned {@code List&lt;TResult&gt;} will contain of 0 elements.
    *
    * @param tasks The tasks that the return value will wait for before completing.
-   * @return A Task that will resolve to {@code Void} when all the tasks are resolved. If a single
-   * task fails, it will resolve to that {@link java.lang.Exception}. If multiple tasks fail, it
-   * will resolve to an {@link AggregateException} of all the {@link java.lang.Exception}s.
+   * @return A Task that will resolve to {@code List&lt;TResult&gt;} when all the tasks are resolved.
+   */
+  public static <TResult> Task<List<TResult>> whenAllResult(final Collection<? extends Task<TResult>> tasks) {
+    return whenAll(tasks).onSuccess(new Continuation<Void, List<TResult>>() {
+      @Override
+      public List<TResult> then(Task<Void> task) throws Exception {
+        if (tasks.size() == 0) {
+          return Collections.emptyList();
+        }
+
+        List<TResult> results = new ArrayList<>();
+        for (Task<TResult> individualTask : tasks) {
+          results.add(individualTask.getResult());
+        }
+        return results;
+      }
+    });
+  }
+
+  /**
+   * Creates a task that completes when all of the provided tasks are complete.
+   * <p/>
+   * If any of the supplied tasks completes in a faulted state, the returned task will also complete
+   * in a faulted state, where its exception will resolve to that {@link java.lang.Exception} if a
+   * single task fails or an {@link AggregateException} of all the {@link java.lang.Exception}s
+   * if multiple tasks fail.
+   * <p/>
+   * If none of the supplied tasks faulted but at least one of them was cancelled, the returned
+   * task will end as cancelled.
+   * <p/>
+   * If none of the tasks faulted and none of the tasks were canceled, the resulting task will
+   * end in the completed state.
+   * <p/>
+   * If the supplied collection contains no tasks, the returned task will immediately transition
+   * to a completed state before it's returned to the caller.
+   *
+   * @param tasks The tasks that the return value will wait for before completing.
+   * @return A Task that will resolve to {@code Void} when all the tasks are resolved.
    */
   public static Task<Void> whenAll(Collection<? extends Task<?>> tasks) {
     if (tasks.size() == 0) {
