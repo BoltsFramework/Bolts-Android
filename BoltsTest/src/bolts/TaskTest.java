@@ -335,9 +335,9 @@ public class TaskTest extends InstrumentationTestCase {
             assertFalse(task.isCancelled());
 
             assertTrue(task.getError() instanceof AggregateException);
-            assertEquals(2, ((AggregateException) task.getError()).getCauses().length);
-            assertEquals(error0, ((AggregateException) task.getError()).getCauses()[0]);
-            assertEquals(error1, ((AggregateException) task.getError()).getCauses()[1]);
+            assertEquals(2, ((AggregateException) task.getError()).getInnerThrowables().size());
+            assertEquals(error0, ((AggregateException) task.getError()).getInnerThrowables().get(0));
+            assertEquals(error1, ((AggregateException) task.getError()).getInnerThrowables().get(1));
             assertEquals(error0, task.getError().getCause());
 
             for (Task<Void> t : tasks) {
@@ -583,6 +583,9 @@ public class TaskTest extends InstrumentationTestCase {
     assertEquals(2, aggregate.getErrors().size());
     assertEquals(error0, aggregate.getErrors().get(0));
     assertEquals(error1, aggregate.getErrors().get(1));
+    assertEquals(2, aggregate.getCauses().length);
+    assertEquals(error0, aggregate.getCauses()[0]);
+    assertEquals(error1, aggregate.getCauses()[1]);
 
     // Test deprecated getErrors method returns sane results with non-Exceptions
     aggregate = new AggregateException("message", new Throwable[]{ error0, error1, error2 });

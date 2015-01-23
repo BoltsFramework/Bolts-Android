@@ -10,6 +10,7 @@
 package bolts;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -303,10 +304,9 @@ public class Task<TResult> {
               if (causes.size() == 1) {
                 allFinished.setError(causes.get(0));
               } else {
-                Throwable[] throwables = causes.toArray(new Throwable[causes.size()]);
                 Exception error = new AggregateException(
                     String.format("There were %d exceptions.", causes.size()),
-                    throwables);
+                    causes);
                 allFinished.setError(error);
               }
             } else if (isCancelled.get()) {
