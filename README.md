@@ -192,7 +192,7 @@ Task<String> failed = Task.forError(new RuntimeException("An error message."));
 With these tools, it's easy to make your own asynchronous functions that return tasks. For example, you can define `fetchAsync` easily.
 
 ```java
-public Task<Void> fetchAsync(ParseObject obj) {
+public Task<ParseObject> fetchAsync(ParseObject obj) {
   final Task<ParseObject>.TaskCompletionSource tcs = Task.create();
   obj.fetchInBackground(new GetCallback() {
     public void done(ParseObject object, ParseException e) {
