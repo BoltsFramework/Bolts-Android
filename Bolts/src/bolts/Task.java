@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -180,6 +181,9 @@ public class Task<TResult> {
 
   /**
    * Invokes the callable on a background thread, returning a Task to represent the operation.
+   *
+   * If you want to cancel the resulting Task throw a {@link java.util.concurrent.CancellationException}
+   * from the callable.
    */
   public static <TResult> Task<TResult> callInBackground(Callable<TResult> callable) {
     return call(callable, BACKGROUND_EXECUTOR);
@@ -187,6 +191,9 @@ public class Task<TResult> {
 
   /**
    * Invokes the callable using the given executor, returning a Task to represent the operation.
+   *
+   * If you want to cancel the resulting Task throw a {@link java.util.concurrent.CancellationException}
+   * from the callable.
    */
   public static <TResult> Task<TResult> call(final Callable<TResult> callable, Executor executor) {
     final Task<TResult>.TaskCompletionSource tcs = Task.create();
@@ -195,6 +202,8 @@ public class Task<TResult> {
       public void run() {
         try {
           tcs.setResult(callable.call());
+        } catch (CancellationException e) {
+          tcs.setCancelled();
         } catch (Exception e) {
           tcs.setError(e);
         }
@@ -205,6 +214,9 @@ public class Task<TResult> {
 
   /**
    * Invokes the callable on the current thread, producing a Task.
+   *
+   * If you want to cancel the resulting Task throw a {@link java.util.concurrent.CancellationException}
+   * from the callable.
    */
   public static <TResult> Task<TResult> call(final Callable<TResult> callable) {
     return call(callable, IMMEDIATE_EXECUTOR);
@@ -507,6 +519,8 @@ public class Task<TResult> {
         try {
           TContinuationResult result = continuation.then(task);
           tcs.setResult(result);
+        } catch (CancellationException e) {
+          tcs.setCancelled();
         } catch (Exception e) {
           tcs.setError(e);
         }
@@ -556,6 +570,8 @@ public class Task<TResult> {
               }
             });
           }
+        } catch (CancellationException e) {
+          tcs.setCancelled();
         } catch (Exception e) {
           tcs.setError(e);
         }
