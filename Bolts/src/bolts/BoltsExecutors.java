@@ -3,6 +3,8 @@ package bolts;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Collection of {@link Executor}s to use in conjunction with {@link Task}.
@@ -20,12 +22,14 @@ import java.util.concurrent.ExecutorService;
   }
 
   private final ExecutorService background;
+  private final ScheduledExecutorService scheduled;
   private final Executor immediate;
 
   private BoltsExecutors() {
     background = !isAndroidRuntime()
         ? java.util.concurrent.Executors.newCachedThreadPool()
         : AndroidExecutors.newCachedThreadPool();
+    scheduled = Executors.newSingleThreadScheduledExecutor();
     immediate = new ImmediateExecutor();
   }
 
@@ -34,6 +38,10 @@ import java.util.concurrent.ExecutorService;
    */
   public static ExecutorService background() {
     return INSTANCE.background;
+  }
+
+  /* package */ static ScheduledExecutorService scheduled() {
+    return INSTANCE.scheduled;
   }
 
   /**
@@ -53,7 +61,7 @@ import java.util.concurrent.ExecutorService;
    */
   private static class ImmediateExecutor implements Executor {
     private static final int MAX_DEPTH = 15;
-    private ThreadLocal<Integer> executionDepth = new ThreadLocal<Integer>();
+    private ThreadLocal<Integer> executionDepth = new ThreadLocal<>();
 
     /**
      * Increments the depth.
