@@ -382,14 +382,17 @@ protected void onCreate(Bundle savedInstanceState) {
     // targetUrl is the URL shared externally. In most cases, you embed your content identifier
     // in this data.
 
-    // If you need to access data you passing from the meta tag from your website or from opening app.
-    // You can get them from applinkData and referrerAppData.
+    // If you need to access data that you are passing from the meta tag from your website or from opening app
+    // you can get them from AppLinkData.
     Bundle applinkData = AppLinks.getAppLinkData(getIntent());
+    String id = applinkData.getString("id");
+    
+    // You can also get referrer data from AppLinkData
     Bundle referrerAppData = applinkData.getBundle("referer_app_link");
 
-    // Apps can easily check the Extras and App Link data from the App Link as well.
-    String fbAccessToken = AppLinks.getAppLinkExtras("fb_access_token");
-    String refererData = AppLinks.getAppLinkExtras("referer");
+    // Apps can easily check the Extras from the App Link as well.
+    Bundle extras = AppLinks.getAppLinkExtras(getIntent());
+    String fbAccessToken = extras.getString("fb_access_token");
   } else {
     // Not an applink, your existing code goes here.
   }
@@ -432,9 +435,9 @@ Then, you can build an App Link request with any additional data you would like 
 
 ```java
 Bundle extras = new Bundle();
-extras.put("access_token", "t0kEn");
+extras.putString("fb_access_token", "t0kEn");
 Bundle appLinkData = new Bundle();
-appLinkData.put("12345");
+appLinkData.putString("id", "12345");
 AppLinkNavigation navigation = new AppLinkNavigation(link, extras, appLinkData);
 return navigation.navigate();
 ```
