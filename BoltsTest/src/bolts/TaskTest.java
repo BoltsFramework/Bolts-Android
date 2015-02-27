@@ -58,6 +58,16 @@ public class TaskTest extends InstrumentationTestCase {
     assertTrue(cancelled.isCancelled());
   }
 
+  public void testDelay() throws InterruptedException {
+    final Task<Void> delayed = Task.delay(200);
+    Thread.sleep(50);
+    assertFalse(delayed.isCompleted());
+    Thread.sleep(150);
+    assertTrue(delayed.isCompleted());
+    assertFalse(delayed.isFaulted());
+    assertFalse(delayed.isCancelled());
+  }
+
   public void testSynchronousContinuation() {
     final Task<Integer> complete = Task.forResult(5);
     final Task<Integer> error = Task.forError(new RuntimeException());

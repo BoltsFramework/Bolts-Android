@@ -10,7 +10,6 @@
 package bolts;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +17,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -148,6 +149,30 @@ public class Task<TResult> {
   public static <TResult> Task<TResult> cancelled() {
     Task<TResult>.TaskCompletionSource tcs = Task.create();
     tcs.setCancelled();
+    return tcs.getTask();
+  }
+
+  /**
+   * Creates a task that completes after a time delay.
+   *
+   * @param delay The number of milliseconds to wait before completing the returned task. Zero and
+   *              negative values are treated as requests for immediate execution.
+   */
+  public static Task<Void> delay(long delay) {
+    return delay(delay, BoltsExecutors.scheduled());
+  }
+
+  /* package */ static Task<Void> delay(long delay, ScheduledExecutorService executor) {
+    if (delay <= 0) {
+      return Task.forResult(null);
+    }
+    final Task<Void>.TaskCompletionSource tcs = Task.create();
+    executor.schedule(new Runnable() {
+      @Override
+      public void run() {
+        tcs.setResult(null);
+      }
+    }, delay, TimeUnit.MILLISECONDS);
     return tcs.getTask();
   }
 
