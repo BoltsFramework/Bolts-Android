@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.test.InstrumentationTestCase;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -277,6 +278,235 @@ public class TaskTest extends InstrumentationTestCase {
     assertTrue(task.isCompleted());
     assertFalse(task.isCancelled());
     assertFalse(task.isFaulted());
+  }
+    
+  public void testWhenAnyResultFirstSuccess() {
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final ArrayList<Task<Integer>> tasks = new ArrayList<>();
+        final Task<Integer> firstToCompleteSuccess = Task.callInBackground(new Callable<Integer>() {
+          @Override
+          public Integer call() throws Exception {
+            Thread.sleep(50);
+            return 10;
+          }
+        });
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        tasks.add(firstToCompleteSuccess);
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        return Task.whenAnyResult(tasks).continueWith(new Continuation<Task<Integer>, Void>() {
+          @Override
+          public Void then(Task<Task<Integer>> task) throws Exception {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(firstToCompleteSuccess, task.getResult());
+            assertTrue(task.getResult().isCompleted());
+            assertFalse(task.getResult().isCancelled());
+            assertFalse(task.getResult().isFaulted());
+            assertEquals(10, (int)task.getResult().getResult());
+            return null;
+          }
+        });
+      }
+    });
+  }
+    
+  public void testWhenAnyFirstSuccess() {
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final ArrayList<Task<?>> tasks = new ArrayList<>();
+        final Task<String> firstToCompleteSuccess = Task.callInBackground(new Callable<String>() {
+          @Override
+          public String call() throws Exception {
+            Thread.sleep(50);
+            return "SUCCESS";
+          }
+        });
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        tasks.add(firstToCompleteSuccess);
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        return Task.whenAny(tasks).continueWith(new Continuation<Task<?>, Object>() {
+          @Override
+          public Object then(Task<Task<?>> task) throws Exception {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(firstToCompleteSuccess, task.getResult());
+            assertTrue(task.getResult().isCompleted());
+            assertFalse(task.getResult().isCancelled());
+            assertFalse(task.getResult().isFaulted());
+            assertEquals("SUCCESS", task.getResult().getResult());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testWhenAnyResultFirstError() {
+    final Exception error = new RuntimeException("This task failed.");
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final ArrayList<Task<Integer>> tasks = new ArrayList<>();
+        final Task<Integer> firstToCompleteError = Task.callInBackground(new Callable<Integer>() {
+          @Override
+          public Integer call() throws Exception {
+            Thread.sleep(50);
+            throw error;
+          }
+        });
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        tasks.add(firstToCompleteError);
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        return Task.whenAnyResult(tasks).continueWith(new Continuation<Task<Integer>, Object>() {
+          @Override
+          public Object then(Task<Task<Integer>> task) throws Exception {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(firstToCompleteError, task.getResult());
+            assertTrue(task.getResult().isCompleted());
+            assertFalse(task.getResult().isCancelled());
+            assertTrue(task.getResult().isFaulted());
+            assertEquals(error, task.getResult().getError());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testWhenAnyFirstError() {
+    final Exception error = new RuntimeException("This task failed.");
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final ArrayList<Task<?>> tasks = new ArrayList<>();
+        final Task<String> firstToCompleteError = Task.callInBackground(new Callable<String>() {
+          @Override
+          public String call() throws Exception {
+            Thread.sleep(50);
+            throw error;
+          }
+        });
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        tasks.add(firstToCompleteError);
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        return Task.whenAny(tasks).continueWith(new Continuation<Task<?>, Object>() {
+          @Override
+          public Object then(Task<Task<?>> task) throws Exception {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(firstToCompleteError, task.getResult());
+            assertTrue(task.getResult().isCompleted());
+            assertFalse(task.getResult().isCancelled());
+            assertTrue(task.getResult().isFaulted());
+            assertEquals(error, task.getResult().getError());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testWhenAnyResultFirstCancelled() {
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final ArrayList<Task<Integer>> tasks = new ArrayList<>();
+        final Task<Integer> firstToCompleteCancelled = Task.callInBackground(new Callable<Integer>() {
+          @Override
+          public Integer call() throws Exception {
+            Thread.sleep(50);
+            throw new CancellationException();
+          }
+        });
+         
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        tasks.add(firstToCompleteCancelled);
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        return Task.whenAnyResult(tasks).continueWith(new Continuation<Task<Integer>, Object>() {
+          @Override
+          public Object then(Task<Task<Integer>> task) throws Exception {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(firstToCompleteCancelled, task.getResult());
+            assertTrue(task.getResult().isCompleted());
+            assertTrue(task.getResult().isCancelled());
+            assertFalse(task.getResult().isFaulted());
+            return null;
+          }
+        });
+      }
+    });
+  }
+    
+  public void testWhenAnyFirstCancelled() {
+    runTaskTest(new Callable<Task<?>>() {
+      @Override
+      public Task<?> call() throws Exception {
+        final ArrayList<Task<?>> tasks = new ArrayList<>();
+        final Task<String> firstToCompleteCancelled = Task.callInBackground(new Callable<String>() {
+          @Override
+          public String call() throws Exception {
+            Thread.sleep(50);
+            throw new CancellationException();
+          }
+        });
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        tasks.add(firstToCompleteCancelled);
+        tasks.addAll(launchTasksWithRandomCompletions(5));
+        return Task.whenAny(tasks).continueWith(new Continuation<Task<?>, Object>() {
+          @Override
+          public Object then(Task<Task<?>> task) throws Exception {
+            assertTrue(task.isCompleted());
+            assertFalse(task.isFaulted());
+            assertFalse(task.isCancelled());
+            assertEquals(firstToCompleteCancelled, task.getResult());
+            assertTrue(task.getResult().isCompleted());
+            assertTrue(task.getResult().isCancelled());
+            assertFalse(task.getResult().isFaulted());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Launches a given number of tasks (of Integer) that will complete either in a completed, 
+   * cancelled or faulted state (random distribution).
+   * Each task will reach completion after a somehow random delay (between 500 and 600 ms).
+   * Each task reaching a success completion state will have its result set to a random Integer 
+   * (between 0 to 1000).
+   * @param numberOfTasksToLaunch The number of tasks to launch
+   * @return A collection containing all the tasks that have been launched
+   */
+  private Collection<Task<Integer>> launchTasksWithRandomCompletions(int numberOfTasksToLaunch ) {
+    final ArrayList<Task<Integer>> tasks = new ArrayList<>();
+    for (int i=0; i < numberOfTasksToLaunch; i++) {
+      Task<Integer> task = Task.callInBackground(new Callable<Integer>() {
+        @Override
+        public Integer call() throws Exception {
+          Thread.sleep((long) (500 + (Math.random() * 100)));
+          double rand = Math.random();
+          if (rand >= 0.7) {
+            throw new RuntimeException("This task failed.");
+          } else if (rand >= 0.4) {
+          throw new CancellationException();
+          }
+          return (int)(Math.random() * 1000);
+        }
+      });
+      tasks.add(task);
+    }
+    return tasks;
   }
 
   public void testWhenAllSuccess() {
