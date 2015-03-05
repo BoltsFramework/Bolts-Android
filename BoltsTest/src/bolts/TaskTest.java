@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskTest extends InstrumentationTestCase {
@@ -138,6 +139,22 @@ public class TaskTest extends InstrumentationTestCase {
     assertTrue(second.isCancelled());
   }
 
+  public void testSynchronousContinuationTokenAlreadyCancelled() {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    final Capture<Boolean> continuationRun = new Capture<>(false);
+    cts.cancel();
+    Task<Integer> first = Task.forResult(1);
+    Task<Integer> second = first.continueWith(new Continuation<Integer, Integer>() {
+      public Integer then(Task<Integer> task) {
+        continuationRun.set(true);
+        return 2;
+      }
+    }, cts.getToken());
+    assertTrue(first.isCompleted());
+    assertTrue(second.isCancelled());
+    assertFalse(continuationRun.get());
+  }
+
   public void testSynchronousTaskCancellation() {
     Task<Integer> first = Task.forResult(1);
     Task<Integer> second = first.continueWithTask(new Continuation<Integer, Task<Integer>>() {
@@ -160,6 +177,69 @@ public class TaskTest extends InstrumentationTestCase {
         }).continueWith(new Continuation<Integer, Void>() {
           public Void then(Task<Integer> task) {
             assertEquals(5, task.getResult().intValue());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testBackgroundCallTokenCancellation() {
+    final CancellationTokenSource cts = new CancellationTokenSource();
+    final CancellationToken ct = cts.getToken();
+    final Capture<Boolean> waitingToBeCancelled = new Capture<Boolean>(false);
+    final Object cancelLock = new Object();
+
+    Task<Integer> task = Task.callInBackground(new Callable<Integer>() {
+      @Override
+      public Integer call() throws Exception {
+        synchronized (cancelLock) {
+          waitingToBeCancelled.set(true);
+          cancelLock.wait();
+        }
+        ct.throwIfCancellationRequested();
+        return 5;
+      }
+    });
+
+    while (true) {
+      synchronized (cancelLock) {
+        if (waitingToBeCancelled.get()) {
+          cts.cancel();
+          cancelLock.notify();
+          break;
+        }
+      }
+      try {
+        Thread.sleep(5);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    try {
+      task.waitForCompletion();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
+    assertTrue(task.isCancelled());
+  }
+
+  public void testBackgroundCallTokenAlreadyCancelled() {
+    final CancellationTokenSource cts = new CancellationTokenSource();
+
+    cts.cancel();
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<?> call() throws Exception {
+        return Task.callInBackground(new Callable<Integer>() {
+          public Integer call() throws Exception {
+            Thread.sleep(100);
+            return 5;
+          }
+        }, cts.getToken()).continueWith(new Continuation<Integer, Void>() {
+          public Void then(Task<Integer> task) {
+            assertTrue(task.isCancelled());
             return null;
           }
         });
@@ -839,6 +919,34 @@ public class TaskTest extends InstrumentationTestCase {
         }, Executors.newCachedThreadPool()).continueWith(new Continuation<Void, Void>() {
           public Void then(Task<Void> task) throws Exception {
             assertEquals(10, count.get());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  public void testContinueWhileAsyncCancellation() {
+    final AtomicInteger count = new AtomicInteger(0);
+    final CancellationTokenSource cts = new CancellationTokenSource();
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<?> call() throws Exception {
+        return Task.forResult(null).continueWhile(new Callable<Boolean>() {
+          public Boolean call() throws Exception {
+            return count.get() < 10;
+          }
+        }, new Continuation<Void, Task<Void>>() {
+          public Task<Void> then(Task<Void> task) throws Exception {
+            if (count.incrementAndGet() == 5) {
+              cts.cancel();
+            }
+            return null;
+          }
+        }, Executors.newCachedThreadPool(),
+            cts.getToken()).continueWith(new Continuation<Void, Void>() {
+          public Void then(Task<Void> task) throws Exception {
+            assertTrue(task.isCancelled());
+            assertEquals(5, count.get());
             return null;
           }
         });

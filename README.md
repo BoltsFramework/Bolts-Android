@@ -356,6 +356,55 @@ saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>()
 });
 ```
 
+## Cancelling Tasks
+
+To cancel a task create a `CancellationTokenSource` and pass the corresponding token to any methods that create a task you want to cancel, then call `cancel()` on the source. This will cancel any ongoing tasks that the token was supplied to.
+
+
+```java
+CancellationTokenSource cts = new CancellationTokenSource();
+
+Task<Integer> stringTask = getIntAsync(cts.getToken());
+
+cts.cancel();
+```
+
+To cancel an asynchronous call using a token you must first modify the method to accept a `CancellationToken` and use the  `isCancellationRequested()` method to determine when to halt the operation.
+
+```java
+/**
+ Gets an Integer asynchronously.
+ */
+public Task<Integer> getIntAsync(CancellationToken ct) {
+  // Create a new Task
+  Task<Integer>.CompletionSource tcs = Task.create();
+
+  new Thread() {
+    @Override
+    public void run() {
+      // Check if cancelled at start
+      if (ct.isCancellationRequested()) {
+        tcs.setCancelled();
+        return;
+      }
+
+      int result = 0;
+      while (result < 100) {
+        // Poll isCancellationRequested in a loop
+        if (ct.isCancellationRequested()) {
+          tcs.setCancelled();
+          return;
+        }
+        result++;
+      }
+      tcs.setResult(result);
+    }
+  }.start();
+
+  return tcs.getTask();
+}
+```
+
 # App Links
 
 [App Links](http://www.applinks.org) provide a cross-platform mechanism that allows a developer to define and publish a deep-linking scheme for their content, allowing other apps to link directly to an experience optimized for the device they are running on. Whether you are building an app that receives incoming links or one that may link out to other apps' content, Bolts provides tools to simplify implementation of the [App Links protocol](http://www.applinks.org/documentation).
