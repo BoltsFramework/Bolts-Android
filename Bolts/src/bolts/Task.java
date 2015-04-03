@@ -18,6 +18,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -159,20 +160,48 @@ public class Task<TResult> {
    *              negative values are treated as requests for immediate execution.
    */
   public static Task<Void> delay(long delay) {
-    return delay(delay, BoltsExecutors.scheduled());
+    return delay(delay, BoltsExecutors.scheduled(), null);
   }
 
-  /* package */ static Task<Void> delay(long delay, ScheduledExecutorService executor) {
+  /**
+   * Creates a task that completes after a time delay.
+   *
+   * @param delay The number of milliseconds to wait before completing the returned task. Zero and
+   *              negative values are treated as requests for immediate execution.
+   * @param cancellationToken The optional cancellation token that will be checked prior to
+   *                          completing the returned task.
+   */
+  public static Task<Void> delay(long delay, CancellationToken cancellationToken) {
+    return delay(delay, BoltsExecutors.scheduled(), cancellationToken);
+  }
+
+  /* package */ static Task<Void> delay(long delay, ScheduledExecutorService executor, final CancellationToken cancellationToken) {
+    if (cancellationToken != null && cancellationToken.isCancellationRequested()) {
+      return Task.cancelled();
+    }
+
     if (delay <= 0) {
       return Task.forResult(null);
     }
+
     final Task<Void>.TaskCompletionSource tcs = Task.create();
-    executor.schedule(new Runnable() {
+    final ScheduledFuture<?> scheduled = executor.schedule(new Runnable() {
       @Override
       public void run() {
-        tcs.setResult(null);
+        tcs.trySetResult(null);
       }
     }, delay, TimeUnit.MILLISECONDS);
+
+    if (cancellationToken != null) {
+      cancellationToken.register(new Runnable() {
+        @Override
+        public void run() {
+          scheduled.cancel(true);
+          tcs.trySetCancelled();
+        }
+      });
+    }
+
     return tcs.getTask();
   }
 
