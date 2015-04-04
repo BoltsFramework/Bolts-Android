@@ -11,6 +11,7 @@ package bolts;
 
 import android.test.InstrumentationTestCase;
 
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
 public class CancellationTest extends InstrumentationTestCase {
@@ -44,5 +45,68 @@ public class CancellationTest extends InstrumentationTestCase {
     } catch (CancellationException e) {
       // Do nothing
     }
+  }
+
+  public void testTokenCallsRegisteredActionWhenCancelled() {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+    final Capture<Object> result = new Capture<>();
+
+    token.register(new Runnable() {
+      @Override
+      public void run() {
+        result.set("Run!");
+      }
+    });
+
+    assertNull(result.get());
+
+    cts.cancel();
+
+    assertNotNull(result.get());
+  }
+
+  public void testCancelledTokenCallsRegisteredActionImmediately() {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+    final Capture<Object> result = new Capture<>();
+
+    cts.cancel();
+
+    token.register(new Runnable() {
+      @Override
+      public void run() {
+        result.set("Run!");
+      }
+    });
+
+    assertNotNull(result.get());
+  }
+
+  public void testTokenDoesNotCallUnregisteredAction() {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+    final Capture<Object> result1 = new Capture<>();
+    final Capture<Object> result2 = new Capture<>();
+
+    CancellationTokenRegistration registration1 = token.register(new Runnable() {
+      @Override
+      public void run() {
+        result1.set("Run!");
+      }
+    });
+    token.register(new Runnable() {
+      @Override
+      public void run() {
+        result2.set("Run!");
+      }
+    });
+
+    registration1.close();
+
+    cts.cancel();
+
+    assertNull(result1.get());
+    assertNotNull(result2.get());
   }
 }
