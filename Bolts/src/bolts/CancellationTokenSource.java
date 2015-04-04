@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Signals to a {@link CancellationToken} that it should be canceled. To create a
@@ -27,6 +30,8 @@ public class CancellationTokenSource implements Closeable {
 
   private final Object lock = new Object();
   private final List<CancellationTokenRegistration> registrations = new ArrayList<>();
+  private final ScheduledExecutorService executor = BoltsExecutors.scheduled();
+  private ScheduledFuture<?> scheduledCancellation;
   private boolean cancellationRequested;
   private boolean closed;
 
@@ -66,6 +71,9 @@ public class CancellationTokenSource implements Closeable {
       if (cancellationRequested) {
         return;
       }
+
+      cancelScheduledCancellation();
+
       cancellationRequested = true;
       registrations = new ArrayList<>(this.registrations);
     }
@@ -73,14 +81,54 @@ public class CancellationTokenSource implements Closeable {
   }
 
   /**
-   * Releases all resources associated with this {@code CancellationTokenSource}.
+   * Schedules a cancel operation on this {@code CancellationTokenSource} after the specified number of milliseconds.
+   * @param delay The number of milliseconds to wait before completing the returned task. If delay is {@code 0}
+   *              the cancel is executed immediately. If delay is {@code -1} any scheduled cancellation is stopped.
    */
+  public void cancelAfter(final long delay) {
+    cancelAfter(delay, TimeUnit.MILLISECONDS);
+  }
+
+  private void cancelAfter(long delay, TimeUnit timeUnit) {
+    if (delay < -1) {
+      throw new IllegalArgumentException("Delay must be >= -1");
+    }
+
+    if (delay == 0) {
+      cancel();
+      return;
+    }
+
+    synchronized (lock) {
+      if (cancellationRequested) {
+        return;
+      }
+
+      cancelScheduledCancellation();
+
+      if (delay != -1) {
+        scheduledCancellation = executor.schedule(new Runnable() {
+          @Override
+          public void run() {
+            synchronized (lock) {
+              scheduledCancellation = null;
+            }
+            cancel();
+          }
+        }, delay, timeUnit);
+      }
+    }
+  }
+
   @Override
   public void close() {
     synchronized (lock) {
       if (closed) {
         return;
       }
+
+      cancelScheduledCancellation();
+
       for (CancellationTokenRegistration registration : registrations) {
         registration.close();
       }
@@ -149,6 +197,14 @@ public class CancellationTokenSource implements Closeable {
   private void throwIfClosed() {
     if (closed) {
       throw new IllegalStateException("Object already closed");
+    }
+  }
+
+  // Performs no synchronization.
+  private void cancelScheduledCancellation() {
+    if (scheduledCancellation != null) {
+      scheduledCancellation.cancel(true);
+      scheduledCancellation = null;
     }
   }
 }
