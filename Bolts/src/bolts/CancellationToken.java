@@ -9,6 +9,8 @@
  */
 package bolts;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CancellationException;
 
@@ -25,22 +27,32 @@ import java.util.concurrent.CancellationException;
  * @see CancellationTokenSource
  * @see CancellationTokenSource#getToken()
  * @see CancellationTokenSource#cancel()
+ * @see CancellationToken#register(Runnable)
  */
 public class CancellationToken {
 
-  private final Object lock = new Object();
-  private boolean cancellationRequested;
+  private final CancellationTokenSource tokenSource;
 
-  /* package */ CancellationToken() {
+  /* package */ CancellationToken(CancellationTokenSource tokenSource) {
+    this.tokenSource = tokenSource;
   }
 
   /**
    * @return {@code true} if the cancellation was requested from the source, {@code false} otherwise.
    */
   public boolean isCancellationRequested() {
-    synchronized (lock) {
-      return cancellationRequested;
-    }
+    return tokenSource.isCancellationRequested();
+  }
+
+  /**
+   * Registers a runnable that will be called when this CancellationToken is canceled.
+   * If this token is already in the canceled state, the runnable will be run immediately and synchronously.
+   * @param action the runnable to be run when the token is cancelled.
+   * @return a {@link CancellationTokenRegistration} instance that can be used to unregister
+   * the action.
+   */
+  public CancellationTokenRegistration register(Runnable action) {
+    return tokenSource.register(action);
   }
 
   /**
@@ -48,22 +60,7 @@ public class CancellationToken {
    * May be used to stop execution of a thread or runnable.
    */
   public void throwIfCancellationRequested() throws CancellationException {
-    synchronized (lock) {
-      if (cancellationRequested) {
-        throw new CancellationException();
-      }
-    }
-  }
-
-  /* package */ boolean tryCancel() {
-    synchronized (lock) {
-      if (cancellationRequested) {
-        return false;
-      }
-
-      cancellationRequested = true;
-    }
-    return true;
+    tokenSource.throwIfCancellationRequested();
   }
 
   @Override
@@ -71,6 +68,6 @@ public class CancellationToken {
     return String.format(Locale.US, "%s@%s[cancellationRequested=%s]",
         getClass().getName(),
         Integer.toHexString(hashCode()),
-        Boolean.toString(cancellationRequested));
+        Boolean.toString(tokenSource.isCancellationRequested()));
   }
 }
