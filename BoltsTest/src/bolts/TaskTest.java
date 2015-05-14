@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskTest extends InstrumentationTestCase {
@@ -64,10 +63,25 @@ public class TaskTest extends InstrumentationTestCase {
     final Task<Void> delayed = Task.delay(200);
     Thread.sleep(50);
     assertFalse(delayed.isCompleted());
-    Thread.sleep(150);
+    Thread.sleep(200);
     assertTrue(delayed.isCompleted());
     assertFalse(delayed.isFaulted());
     assertFalse(delayed.isCancelled());
+  }
+
+  public void testDelayWithCancelledToken() throws InterruptedException {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    cts.cancel();
+    final Task<Void> delayed = Task.delay(200, cts.getToken());
+    assertTrue(delayed.isCancelled());
+  }
+
+  public void testDelayWithToken() throws InterruptedException {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    final Task<Void> delayed = Task.delay(200, cts.getToken());
+    assertFalse(delayed.isCancelled());
+    cts.cancel();
+    assertTrue(delayed.isCancelled());
   }
 
   public void testSynchronousContinuation() {
