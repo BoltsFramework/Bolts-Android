@@ -20,10 +20,60 @@ public class CancellationTest extends InstrumentationTestCase {
     CancellationToken token = cts.getToken();
 
     assertFalse(token.isCancellationRequested());
+    assertFalse(cts.isCancellationRequested());
 
     cts.cancel();
 
     assertTrue(token.isCancellationRequested());
+    assertTrue(cts.isCancellationRequested());
+  }
+
+  public void testTokenIsCancelledAfterNoDelay() throws Exception {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+
+    assertFalse(token.isCancellationRequested());
+
+    cts.cancelAfter(0);
+
+    assertTrue(token.isCancellationRequested());
+    assertTrue(cts.isCancellationRequested());
+  }
+
+  public void testTokenIsCancelledAfterDelay() throws Exception {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+
+    assertFalse(token.isCancellationRequested());
+
+    cts.cancelAfter(100);
+
+    assertFalse(token.isCancellationRequested());
+    assertFalse(cts.isCancellationRequested());
+
+    Thread.sleep(150);
+
+    assertTrue(token.isCancellationRequested());
+    assertTrue(cts.isCancellationRequested());
+  }
+
+  public void testTokenCancelAfterDelayCancellation() throws Exception {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+
+    assertFalse(token.isCancellationRequested());
+
+    cts.cancelAfter(100);
+
+    assertFalse(token.isCancellationRequested());
+    assertFalse(cts.isCancellationRequested());
+
+    cts.cancelAfter(-1);
+
+    Thread.sleep(150);
+
+    assertFalse(token.isCancellationRequested());
+    assertFalse(cts.isCancellationRequested());
   }
 
   public void testTokenThrowsWhenCancelled() {
