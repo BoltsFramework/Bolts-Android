@@ -375,9 +375,9 @@ To cancel an asynchronous call using a token you must first modify the method to
 /**
  Gets an Integer asynchronously.
  */
-public Task<Integer> getIntAsync(CancellationToken ct) {
+public Task<Integer> getIntAsync(final CancellationToken ct) {
   // Create a new Task
-  Task<Integer>.CompletionSource tcs = Task.create();
+  final Task<Integer>.TaskCompletionSource tcs = Task.create();
 
   new Thread() {
     @Override
