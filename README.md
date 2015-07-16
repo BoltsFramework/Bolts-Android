@@ -37,7 +37,7 @@ saveAsync(obj).continueWith(new Continuation<ParseObject, Void>() {
       // the save was cancelled.
     } else if (task.isFaulted()) {
       // the save failed.
-      Exception error = task.getError()
+      Exception error = task.getError();
     } else {
       // the object was saved successfully.
       ParseObject object = task.getResult();
