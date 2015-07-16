@@ -95,7 +95,7 @@ findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, Task<ParseObj
     return saveAsync(students.get(0));
   }
 }).onSuccessTask(new Continuation<ParseObject, Task<List<ParseObject>>>() {
-  public Task<List<ParseObject>> then(Task<ParseObject> task) throws Exception{
+  public Task<List<ParseObject>> then(Task<ParseObject> task) throws Exception {
     ParseObject valedictorian = task.getResult();
     return findAsync(query);
   }
