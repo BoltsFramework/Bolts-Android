@@ -1,3 +1,7 @@
+branches:
+  only:
+    - master
+
 language: android
 sudo: false
 env:
@@ -17,3 +21,6 @@ before_script:
 
 script:
   - ./gradlew build connectedCheck --info
+
+after_success:
+  - ./scripts/publish_snapshot.sh
