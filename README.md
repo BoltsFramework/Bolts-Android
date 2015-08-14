@@ -1,7 +1,9 @@
 Bolts
 ============
-[![Build Status](http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat)](https://travis-ci.org/BoltsFramework/Bolts-Android)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android)
+[![Build Status][build-status-svg]][build-status-link]
+[![Coverage Status][coverage-status-svg]][coverage-status-link]
+[![Maven Central][maven-svg]][maven-link]
+[![License][license-svg]][license-link]
 
 Bolts is a collection of low-level libraries designed to make developing mobile
 apps easier. Bolts was designed by Parse and Facebook for our own internal use,
@@ -570,6 +572,15 @@ App Links Measurement Events sends additional information from App Links Intents
   * `success`: `“1”` to indicate success in opening the App Link in another app or browser; `“0”` to indicate failure to open the App Link.
   * `type`: `“app”` for open in app, `“web”` for open in browser; `“fail”` when the success field is `“0”`.
   * `version`: App Links API version.
+
+ [build-status-svg]: http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat
+ [build-status-link]: https://travis-ci.org/BoltsFramework/Bolts-Android
+ [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github
+ [coverage-status-link]: https://coveralls.io/github/BoltsFramework/Bolts-Android?branch=master
+ [maven-svg]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android/badge.svg?style=flat
+ [maven-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android
+ [license-svg]: https://img.shields.io/badge/license-BSD-lightgrey.svg
+ [license-link]: https://github.com/BoltsFramework/Bolts-Android/blob/master/LICENSE
 
  [latest]: https://search.maven.org/remote_content?g=com.parse.bolts&a=bolts-android&v=LATEST
  [snap]: https://oss.sonatype.org/content/repositories/snapshots/

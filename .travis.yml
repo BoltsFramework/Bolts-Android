@@ -26,6 +26,7 @@ script:
   - ./gradlew build testDebug connectedCheck --continue --info
 
 after_success:
+  - ./gradlew jacocoTestReport coveralls
   - ./scripts/publish_snapshot.sh
 
 cache:
