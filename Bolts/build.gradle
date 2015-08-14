@@ -1,6 +1,7 @@
 import com.android.builder.core.BuilderConstants
 
 apply plugin: 'com.android.library'
+apply plugin: 'com.github.kt3k.coveralls'
 
 group = 'com.parse.bolts'
 version = '1.2.2-SNAPSHOT'
@@ -14,6 +15,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName project.version
+    }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled = true
+        }
     }
 }
 
@@ -120,3 +127,41 @@ artifacts {
     archives androidSourcesJar
     archives androidJavadocsJar
 }
+
+//region Code Coverage
+
+apply plugin: 'jacoco'
+
+task jacocoTestReport(type:JacocoReport, dependsOn: "testDebugUnitTest") {
+    group = "Verification"
+    description = "Creates unit test coverage reports for the debug variant."
+
+    classDirectories = fileTree(
+            dir: "${buildDir}/intermediates/classes/debug",
+            excludes: ['**/R.class',
+                       '**/R$*.class',
+                       '**/*$ViewInjector*.*',
+                       '**/BuildConfig.*',
+                       '**/Manifest*.*']
+    )
+
+    sourceDirectories = files("${buildDir.parent}/src/main/java")
+    additionalSourceDirs = files([
+            "${buildDir}/generated/source/buildConfig/debug",
+            "${buildDir}/generated/source/r/debug"
+    ])
+    executionData = files("${buildDir}/jacoco/testDebugUnitTest.exec")
+
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+//endregion
+
+//region Coveralls
+
+coveralls.jacocoReportPath = "${buildDir}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+
+//endregion
