@@ -9,12 +9,19 @@
  */
 package bolts;
 
-import android.test.InstrumentationTestCase;
+import org.junit.Test;
 
-import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
-public class CancellationTest extends InstrumentationTestCase {
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class CancellationTest {
+
+  @Test
   public void testTokenIsCancelled() {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -28,6 +35,7 @@ public class CancellationTest extends InstrumentationTestCase {
     assertTrue(cts.isCancellationRequested());
   }
 
+  @Test
   public void testTokenIsCancelledAfterNoDelay() throws Exception {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -40,6 +48,7 @@ public class CancellationTest extends InstrumentationTestCase {
     assertTrue(cts.isCancellationRequested());
   }
 
+  @Test
   public void testTokenIsCancelledAfterDelay() throws Exception {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -57,6 +66,7 @@ public class CancellationTest extends InstrumentationTestCase {
     assertTrue(cts.isCancellationRequested());
   }
 
+  @Test
   public void testTokenCancelAfterDelayCancellation() throws Exception {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -76,6 +86,7 @@ public class CancellationTest extends InstrumentationTestCase {
     assertFalse(cts.isCancellationRequested());
   }
 
+  @Test
   public void testTokenThrowsWhenCancelled() {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -97,6 +108,7 @@ public class CancellationTest extends InstrumentationTestCase {
     }
   }
 
+  @Test
   public void testTokenCallsRegisteredActionWhenCancelled() {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -116,6 +128,7 @@ public class CancellationTest extends InstrumentationTestCase {
     assertNotNull(result.get());
   }
 
+  @Test
   public void testCancelledTokenCallsRegisteredActionImmediately() {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
@@ -133,6 +146,7 @@ public class CancellationTest extends InstrumentationTestCase {
     assertNotNull(result.get());
   }
 
+  @Test
   public void testTokenDoesNotCallUnregisteredAction() {
     CancellationTokenSource cts = new CancellationTokenSource();
     CancellationToken token = cts.getToken();
