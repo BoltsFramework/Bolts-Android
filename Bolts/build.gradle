@@ -51,8 +51,8 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 def isSnapshot = version.endsWith('-SNAPSHOT')
-def ossrhUsername = hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
-def ossrhPassword = hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
+def ossrhUsername = hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : System.getenv('CI_NEXUS_USERNAME')
+def ossrhPassword = hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : System.getenv('CI_NEXUS_PASSWORD')
 
 uploadArchives {
     repositories.mavenDeployer {
