@@ -18,7 +18,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.test.InstrumentationTestCase;
-import junit.framework.Assert;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -40,7 +40,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    openedIntents = new ArrayList<Intent>();
+    openedIntents = new ArrayList<>();
     activityInterceptor = new ContextWrapper(getInstrumentation().getTargetContext()) {
       @Override
       public void startActivity(Intent intent) {
@@ -92,9 +92,9 @@ public class AppLinkTest extends InstrumentationTestCase {
   public void testSimpleIntent() throws Exception {
     Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
 
-    Assert.assertEquals(i.getData(), AppLinks.getTargetUrl(i));
-    Assert.assertNull(AppLinks.getAppLinkData(i));
-    Assert.assertNull(AppLinks.getAppLinkExtras(i));
+    assertEquals(i.getData(), AppLinks.getTargetUrl(i));
+    assertNull(AppLinks.getAppLinkData(i));
+    assertNull(AppLinks.getAppLinkExtras(i));
   }
 
   public void testSimpleIntentWithAppLink() throws Exception {
@@ -107,20 +107,20 @@ public class AppLinkTest extends InstrumentationTestCase {
     appLinkData.putBundle("extras", extras);
     i.putExtra("al_applink_data", appLinkData);
 
-    Assert.assertEquals(Uri.parse("http://www.example2.com"), AppLinks.getTargetUrl(i));
-    Assert.assertNotNull(AppLinks.getAppLinkData(i));
-    Assert.assertNotNull(AppLinks.getAppLinkExtras(i));
-    Assert.assertEquals("bar", AppLinks.getAppLinkExtras(i).getString("foo"));
+    assertEquals(Uri.parse("http://www.example2.com"), AppLinks.getTargetUrl(i));
+    assertNotNull(AppLinks.getAppLinkData(i));
+    assertNotNull(AppLinks.getAppLinkExtras(i));
+    assertEquals("bar", AppLinks.getAppLinkExtras(i).getString("foo"));
   }
 
   public void testGeneralMeasurementEventsBroadcast() throws Exception {
     Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.example.com"));
     i.putExtra("foo", "bar");
-    ArrayList<String> arr = new ArrayList<String>();
+    ArrayList<String> arr = new ArrayList<>();
     arr.add("foo2");
     arr.add("bar2");
     i.putExtra("foobar", arr);
-    Map<String, String> other = new HashMap<String, String>();
+    Map<String, String> other = new HashMap<>();
     other.put("yetAnotherFoo", "yetAnotherBar");
 
     final CountDownLatch lock = new CountDownLatch(1);
@@ -213,21 +213,21 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(1, link.getTargets().size());
+    assertEquals(1, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals(Uri.parse("bolts://"), target.getUrl());
-    Assert.assertEquals("Bolts", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity", target.getClassName());
-    Assert.assertEquals("com.bolts", target.getPackageName());
-    Assert.assertEquals(url, link.getWebUrl());
+    assertEquals(Uri.parse("bolts://"), target.getUrl());
+    assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity", target.getClassName());
+    assertEquals("com.bolts", target.getPackageName());
+    assertEquals(url, link.getWebUrl());
   }
 
   public void testWebViewAppLinkParsingFailure() throws Exception {
     Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
             .getAppLinkFromUrlInBackground(Uri.parse("http://badurl"));
     task.waitForCompletion();
-    Assert.assertNotNull(task.getError());
+    assertNotNull(task.getError());
   }
 
   public void testWebViewSimpleAppLinkParsingZeroShouldFallback() throws Exception {
@@ -243,14 +243,14 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(1, link.getTargets().size());
+    assertEquals(1, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals(Uri.parse("bolts://"), target.getUrl());
-    Assert.assertEquals("Bolts", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity", target.getClassName());
-    Assert.assertEquals("com.bolts", target.getPackageName());
-    Assert.assertNull(link.getWebUrl());
+    assertEquals(Uri.parse("bolts://"), target.getUrl());
+    assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity", target.getClassName());
+    assertEquals("com.bolts", target.getPackageName());
+    assertNull(link.getWebUrl());
   }
 
   public void testWebViewSimpleAppLinkParsingFalseShouldFallback() throws Exception {
@@ -266,14 +266,14 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(1, link.getTargets().size());
+    assertEquals(1, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals(Uri.parse("bolts://"), target.getUrl());
-    Assert.assertEquals("Bolts", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity", target.getClassName());
-    Assert.assertEquals("com.bolts", target.getPackageName());
-    Assert.assertNull(link.getWebUrl());
+    assertEquals(Uri.parse("bolts://"), target.getUrl());
+    assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity", target.getClassName());
+    assertEquals("com.bolts", target.getPackageName());
+    assertNull(link.getWebUrl());
   }
 
   public void testWebViewSimpleAppLinkParsingWithWebUrl() throws Exception {
@@ -289,14 +289,14 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(1, link.getTargets().size());
+    assertEquals(1, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals(Uri.parse("bolts://"), target.getUrl());
-    Assert.assertEquals("Bolts", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity", target.getClassName());
-    Assert.assertEquals("com.bolts", target.getPackageName());
-    Assert.assertEquals(Uri.parse("http://www.example.com"), link.getWebUrl());
+    assertEquals(Uri.parse("bolts://"), target.getUrl());
+    assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity", target.getClassName());
+    assertEquals("com.bolts", target.getPackageName());
+    assertEquals(Uri.parse("http://www.example.com"), link.getWebUrl());
   }
 
   public void testWebViewVersionedAppLinkParsing() throws Exception {
@@ -317,20 +317,20 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(2, link.getTargets().size());
+    assertEquals(2, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals(Uri.parse("bolts://"), target.getUrl());
-    Assert.assertEquals("Bolts", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity", target.getClassName());
-    Assert.assertEquals("com.bolts", target.getPackageName());
+    assertEquals(Uri.parse("bolts://"), target.getUrl());
+    assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity", target.getClassName());
+    assertEquals("com.bolts", target.getPackageName());
 
     target = link.getTargets().get(1);
-    Assert.assertEquals(Uri.parse("bolts2://"), target.getUrl());
-    Assert.assertEquals("Bolts2", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity2", target.getClassName());
-    Assert.assertEquals("com.bolts2", target.getPackageName());
-    Assert.assertEquals(url, link.getWebUrl());
+    assertEquals(Uri.parse("bolts2://"), target.getUrl());
+    assertEquals("Bolts2", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity2", target.getClassName());
+    assertEquals("com.bolts2", target.getPackageName());
+    assertEquals(url, link.getWebUrl());
   }
 
   public void testWebViewVersionedAppLinkParsingOnlyPackages() throws Exception {
@@ -342,14 +342,14 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(2, link.getTargets().size());
+    assertEquals(2, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals("com.bolts", target.getPackageName());
+    assertEquals("com.bolts", target.getPackageName());
 
     target = link.getTargets().get(1);
-    Assert.assertEquals("com.bolts2", target.getPackageName());
-    Assert.assertEquals(url, link.getWebUrl());
+    assertEquals("com.bolts2", target.getPackageName());
+    assertEquals(url, link.getWebUrl());
   }
 
   public void testWebViewVersionedAppLinkParsingPackagesAndNames() throws Exception {
@@ -364,21 +364,21 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(3, link.getTargets().size());
+    assertEquals(3, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals("com.bolts", target.getPackageName());
-    Assert.assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts", target.getPackageName());
+    assertEquals("Bolts", target.getAppName());
 
     target = link.getTargets().get(1);
-    Assert.assertEquals("com.bolts2", target.getPackageName());
-    Assert.assertEquals("Bolts2", target.getAppName());
-    Assert.assertEquals(url, link.getWebUrl());
+    assertEquals("com.bolts2", target.getPackageName());
+    assertEquals("Bolts2", target.getAppName());
+    assertEquals(url, link.getWebUrl());
 
     target = link.getTargets().get(2);
-    Assert.assertEquals("com.bolts3", target.getPackageName());
-    Assert.assertNull(target.getAppName());
-    Assert.assertEquals(url, link.getWebUrl());
+    assertEquals("com.bolts3", target.getPackageName());
+    assertNull(target.getAppName());
+    assertEquals(url, link.getWebUrl());
   }
 
   public void testWebViewPlatformFiltering() throws Exception {
@@ -404,20 +404,20 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLink link = task.getResult();
 
-    Assert.assertEquals(2, link.getTargets().size());
+    assertEquals(2, link.getTargets().size());
 
     AppLink.Target target = link.getTargets().get(0);
-    Assert.assertEquals(Uri.parse("bolts://"), target.getUrl());
-    Assert.assertEquals("Bolts", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity", target.getClassName());
-    Assert.assertEquals("com.bolts", target.getPackageName());
+    assertEquals(Uri.parse("bolts://"), target.getUrl());
+    assertEquals("Bolts", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity", target.getClassName());
+    assertEquals("com.bolts", target.getPackageName());
 
     target = link.getTargets().get(1);
-    Assert.assertEquals(Uri.parse("bolts2://"), target.getUrl());
-    Assert.assertEquals("Bolts2", target.getAppName());
-    Assert.assertEquals("com.bolts.BoltsActivity2", target.getClassName());
-    Assert.assertEquals("com.bolts2", target.getPackageName());
-    Assert.assertEquals(url, link.getWebUrl());
+    assertEquals(Uri.parse("bolts2://"), target.getUrl());
+    assertEquals("Bolts2", target.getAppName());
+    assertEquals("com.bolts.BoltsActivity2", target.getClassName());
+    assertEquals("com.bolts2", target.getPackageName());
+    assertEquals(url, link.getWebUrl());
   }
 
   public void testSimpleAppLinkNavigationExplicit() throws Exception {
@@ -432,13 +432,13 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testSimpleAppLinkNavigationImplicit() throws Exception {
@@ -454,13 +454,13 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testSimpleAppLinkNavigationWithExtras() throws Exception {
@@ -479,14 +479,14 @@ public class AppLinkTest extends InstrumentationTestCase {
 
     AppLinkNavigation.NavigationResult navigationType = navigation.navigate(activityInterceptor);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
-    Assert.assertEquals("bar", AppLinks.getAppLinkExtras(openedIntent).getString("foo"));
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals("bar", AppLinks.getAppLinkExtras(openedIntent).getString("foo"));
   }
 
   public void testSimpleAppLinkNavigationWithAppLinkData() throws Exception {
@@ -505,14 +505,14 @@ public class AppLinkTest extends InstrumentationTestCase {
 
     AppLinkNavigation.NavigationResult navigationType = navigation.navigate(activityInterceptor);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
-    Assert.assertEquals("bar", AppLinks.getAppLinkData(openedIntent).getString("foo"));
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals("bar", AppLinks.getAppLinkData(openedIntent).getString("foo"));
   }
 
   public void testSimpleAppLinkNavigationWithExtrasAndAppLinkData() throws Exception {
@@ -534,15 +534,15 @@ public class AppLinkTest extends InstrumentationTestCase {
 
     AppLinkNavigation.NavigationResult navigationType = navigation.navigate(activityInterceptor);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
-    Assert.assertEquals("bar1", AppLinks.getAppLinkExtras(openedIntent).getString("foo"));
-    Assert.assertEquals("bar2", AppLinks.getAppLinkData(openedIntent).getString("foo"));
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals("bar1", AppLinks.getAppLinkExtras(openedIntent).getString("foo"));
+    assertEquals("bar2", AppLinks.getAppLinkData(openedIntent).getString("foo"));
   }
 
   public void testSimpleAppLinkNavigationWithExtrasAndAppLinkDataFallBackToWeb()
@@ -565,17 +565,17 @@ public class AppLinkTest extends InstrumentationTestCase {
 
     AppLinkNavigation.NavigationResult navigationType = navigation.navigate(activityInterceptor);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertTrue(openedIntent.getDataString().startsWith("http://www.example.com/path"));
+    assertTrue(openedIntent.getDataString().startsWith("http://www.example.com/path"));
 
     String appLinkDataString = openedIntent.getData().getQueryParameter("al_applink_data");
     JSONObject appLinkDataJSON = new JSONObject(appLinkDataString);
     JSONObject appLinkExtrasJSON = appLinkDataJSON.getJSONObject("extras");
-    Assert.assertEquals("bar1", appLinkExtrasJSON.getString("foo"));
-    Assert.assertEquals("bar2", appLinkData.getString("foo"));
+    assertEquals("bar1", appLinkExtrasJSON.getString("foo"));
+    assertEquals("bar2", appLinkData.getString("foo"));
   }
 
   public void testAppLinkNavigationMultipleTargetsNoFallbackExplicit() throws Exception {
@@ -594,13 +594,13 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkNavigationMultipleTargetsNoFallbackImplicit() throws Exception {
@@ -620,13 +620,13 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkNavigationMultipleTargetsWithFallbackExplicit() throws Exception {
@@ -645,13 +645,13 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts2", openedIntent.getData().getScheme());
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts2", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkNavigationMultipleTargetsWithFallbackImplicit() throws Exception {
@@ -671,13 +671,13 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(Uri.parse("http://www.example.com/path"),
-            AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts2", openedIntent.getData().getScheme());
+    assertEquals(Uri.parse("http://www.example.com/path"),
+        AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts2", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkNavigationNoTargets() throws Exception {
@@ -688,11 +688,11 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertTrue(openedIntent.getDataString().startsWith("http://www.example.com/path2"));
+    assertTrue(openedIntent.getDataString().startsWith("http://www.example.com/path2"));
   }
 
   public void testAppLinkNavigationFailure() throws Exception {
@@ -703,8 +703,8 @@ public class AppLinkTest extends InstrumentationTestCase {
     AppLinkNavigation.NavigationResult navigationType = AppLinkNavigation.navigate(
             activityInterceptor, appLink);
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.FAILED, navigationType);
-    Assert.assertEquals(0, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.FAILED, navigationType);
+    assertEquals(0, openedIntents.size());
   }
 
   public void testSimpleAppLinkURLNavigationExplicit() throws Exception {
@@ -720,12 +720,12 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testSimpleAppLinkURLNavigationImplicit() throws Exception {
@@ -741,12 +741,12 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkURLNavigationMultipleTargetsNoFallbackExplicit() throws Exception {
@@ -768,12 +768,12 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkURLNavigationMultipleTargetsNoFallbackImplicit() throws Exception {
@@ -794,12 +794,12 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts", openedIntent.getData().getScheme());
+    assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkURLNavigationMultipleTargetsWithFallbackExplicit() throws Exception {
@@ -821,12 +821,12 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts2", openedIntent.getData().getScheme());
+    assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts2", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkURLNavigationMultipleTargetsWithFallbackImplicit() throws Exception {
@@ -847,12 +847,12 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.APP, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
-    Assert.assertEquals("bolts2", openedIntent.getData().getScheme());
+    assertEquals(uri, AppLinks.getTargetUrl(openedIntent));
+    assertEquals("bolts2", openedIntent.getData().getScheme());
   }
 
   public void testAppLinkURLNavigationNoTargets() throws Exception {
@@ -864,11 +864,11 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertTrue(openedIntent.getDataString().startsWith(uri.toString()));
+    assertTrue(openedIntent.getDataString().startsWith(uri.toString()));
   }
 
   public void testAppLinkURLNavigationWebOnly() throws Exception {
@@ -880,11 +880,11 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
-    Assert.assertEquals(1, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.WEB, navigationType);
+    assertEquals(1, openedIntents.size());
 
     Intent openedIntent = openedIntents.get(0);
-    Assert.assertTrue(openedIntent.getDataString().startsWith("http://www.example.com/path"));
+    assertTrue(openedIntent.getDataString().startsWith("http://www.example.com/path"));
   }
 
   public void testAppLinkURLNavigationFailure() throws Exception {
@@ -896,8 +896,8 @@ public class AppLinkTest extends InstrumentationTestCase {
     waitForTask(task);
     AppLinkNavigation.NavigationResult navigationType = task.getResult();
 
-    Assert.assertEquals(AppLinkNavigation.NavigationResult.FAILED, navigationType);
-    Assert.assertEquals(0, openedIntents.size());
+    assertEquals(AppLinkNavigation.NavigationResult.FAILED, navigationType);
+    assertEquals(0, openedIntents.size());
   }
 
 }
