@@ -16,6 +16,17 @@ Bolts includes:
 
 For more information, see the [Bolts Android API Reference](http://boltsframework.github.io/docs/android/).
 
+## Download
+Download [the latest JAR][latest] or define in Gradle:
+
+```groovy
+dependencies {
+  compile 'com.parse.bolts:bolts-android:1.2.1'
+}
+```
+
+Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].
+
 # Tasks
 
 To build a truly responsive Android application, you must keep long-running operations off of the UI thread, and be careful to avoid blocking anything the UI thread might be waiting on. This means you will need to execute various operations in the background. To make this easier, we've added a class called `Task`. A task represents an asynchronous operation. Typically, a `Task` is returned from an asynchronous function and gives the ability to continue processing the result of the task. When a task is returned from a function, it's already begun doing its job. A task is not tied to a particular threading model: it represents the work being done, not where it is executing. Tasks have many advantages over other methods of asynchronous programming, such as callbacks and `AsyncTask`.
@@ -559,3 +570,6 @@ App Links Measurement Events sends additional information from App Links Intents
   * `success`: `“1”` to indicate success in opening the App Link in another app or browser; `“0”` to indicate failure to open the App Link.
   * `type`: `“app”` for open in app, `“web”` for open in browser; `“fail”` when the success field is `“0”`.
   * `version`: App Links API version.
+
+ [latest]: https://search.maven.org/remote_content?g=com.parse.bolts&a=bolts-android&v=LATEST
+ [snap]: https://oss.sonatype.org/content/repositories/snapshots/
