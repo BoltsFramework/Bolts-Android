@@ -15,7 +15,6 @@ import android.test.InstrumentationTestCase;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class AndroidExecutorsTest extends InstrumentationTestCase {
@@ -31,8 +30,8 @@ public class AndroidExecutorsTest extends InstrumentationTestCase {
   protected void setUp() throws Exception {
     super.setUp();
 
-    corePoolAwaitLatchStack = new LinkedList<CountDownLatch>();
-    corePoolEndLatchStack = new LinkedList<CountDownLatch>();
+    corePoolAwaitLatchStack = new LinkedList<>();
+    corePoolEndLatchStack = new LinkedList<>();
   }
 
   /**

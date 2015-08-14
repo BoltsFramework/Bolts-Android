@@ -6,12 +6,15 @@ language: android
 sudo: false
 env:
   matrix:
-    - ANDROID_TARGET=android-21  ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-22  ANDROID_ABI=default/armeabi-v7a
 
 android:
   components:
-    - build-tools-21.1.2
-    - android-21
+    - build-tools-22.0.1
+    - android-22
+    - sys-img-armeabi-v7a-$ANDROID_TARGET
+    - extra-android-support
+    - extra-android-m2repository
 
 before_script:
   - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
@@ -20,7 +23,12 @@ before_script:
   - adb shell input keyevent 82 &
 
 script:
-  - ./gradlew build connectedCheck --info
+  - ./gradlew build testDebug connectedCheck --continue --info
 
 after_success:
   - ./scripts/publish_snapshot.sh
+
+cache:
+  directories:
+    - $HOME/.gradle
+    - $HOME/.m2/repository
