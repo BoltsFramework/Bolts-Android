@@ -964,17 +964,18 @@ public class TaskTest {
     runTaskTest(new Callable<Task<?>>() {
       public Task<?> call() throws Exception {
         return Task.forResult(null).continueWhile(new Callable<Boolean>() {
-          public Boolean call() throws Exception {
-            return count.get() < 10;
-          }
-        }, new Continuation<Void, Task<Void>>() {
-          public Task<Void> then(Task<Void> task) throws Exception {
-            if (count.incrementAndGet() == 5) {
-              cts.cancel();
-            }
-            return null;
-          }
-        }, Executors.newCachedThreadPool(),
+                                                    public Boolean call() throws Exception {
+                                                      return count.get() < 10;
+                                                    }
+                                                  }, new Continuation<Void, Task<Void>>() {
+                                                    public Task<Void> then(Task<Void> task)
+                                                        throws Exception {
+                                                      if (count.incrementAndGet() == 5) {
+                                                        cts.cancel();
+                                                      }
+                                                      return null;
+                                                    }
+                                                  }, Executors.newCachedThreadPool(),
             cts.getToken()).continueWith(new Continuation<Void, Void>() {
           public Void then(Task<Void> task) throws Exception {
             assertTrue(task.isCancelled());
@@ -1064,6 +1065,20 @@ public class TaskTest {
 
   //endregion
 
+  //region deprecated
+
+  @SuppressWarnings("deprecation")
+  @Test
+  public void testDeprecatedTaskCompletionSource() {
+    Task<Void>.TaskCompletionSource tcsA = Task.create();
+    tcsA.setResult(null);
+    assertTrue(tcsA.getTask().isCompleted());
+
+    TaskCompletionSource<Void> tcsB = Task.create();
+    tcsB.setResult(null);
+    assertTrue(tcsA.getTask().isCompleted());
+  }
+
   @SuppressWarnings("deprecation")
   @Test
   public void testDeprecatedAggregateExceptionMethods() {
@@ -1094,4 +1109,6 @@ public class TaskTest {
     assertNotSame(error2, aggregate.getErrors().get(2));
     assertEquals(error2, aggregate.getErrors().get(2).getCause());
   }
+
+  //endregion
 }
