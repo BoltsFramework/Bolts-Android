@@ -9,7 +9,9 @@
  */
 package bolts;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +27,10 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
   private void runTaskTest(Callable<Task<?>> callable) {
     try {
       Task<?> task = callable.call();
@@ -394,7 +400,7 @@ public class TaskTest {
             assertTrue(task.getResult().isCompleted());
             assertFalse(task.getResult().isCancelled());
             assertFalse(task.getResult().isFaulted());
-            assertEquals(10, (int)task.getResult().getResult());
+            assertEquals(10, (int) task.getResult().getResult());
             return null;
           }
         });
@@ -979,6 +985,84 @@ public class TaskTest {
       }
     });
   }
+
+  //region TaskCompletionSource
+
+  @Test
+  public void testTrySetResult() {
+    TaskCompletionSource<String> tcs = new TaskCompletionSource<>();
+    Task<String> task = tcs.getTask();
+    assertFalse(task.isCompleted());
+
+    boolean success = tcs.trySetResult("SHOW ME WHAT YOU GOT");
+    assertTrue(success);
+    assertTrue(task.isCompleted());
+    assertEquals("SHOW ME WHAT YOU GOT", task.getResult());
+  }
+
+  @Test
+  public void testTrySetError() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    Task<Void> task = tcs.getTask();
+    assertFalse(task.isCompleted());
+
+    Exception exception = new RuntimeException("DISQUALIFIED");
+    boolean success = tcs.trySetError(exception);
+    assertTrue(success);
+    assertTrue(task.isCompleted());
+    assertEquals(exception, task.getError());
+  }
+
+  @Test
+  public void testTrySetCanceled() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    Task<Void> task = tcs.getTask();
+    assertFalse(task.isCompleted());
+
+    boolean success = tcs.trySetCancelled();
+    assertTrue(success);
+    assertTrue(task.isCompleted());
+    assertTrue(task.isCancelled());
+  }
+
+  @Test
+  public void testTrySetOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    assertFalse(tcs.trySetResult(null));
+    assertFalse(tcs.trySetError(new RuntimeException()));
+    assertFalse(tcs.trySetCancelled());
+  }
+
+  @Test
+  public void testSetResultOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    thrown.expect(IllegalStateException.class);
+    tcs.setResult(null);
+  }
+
+  @Test
+  public void testSetErrorOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    thrown.expect(IllegalStateException.class);
+    tcs.setError(new RuntimeException());
+  }
+
+  @Test
+  public void testSetCancelledOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    thrown.expect(IllegalStateException.class);
+    tcs.setCancelled();
+  }
+
+  //endregion
 
   @SuppressWarnings("deprecation")
   @Test
