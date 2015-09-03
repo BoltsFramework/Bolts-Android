@@ -35,7 +35,7 @@ import java.util.concurrent.Callable;
 
 /**
  * A reference implementation for an App Link resolver that uses a hidden
- * {@link android.webkit.WebView} to parse the HTML containing App Link metadata.
+ * {@link WebView} to parse the HTML containing App Link metadata.
  */
 public class WebViewAppLinkResolver implements AppLinkResolver {
   private final Context context;
@@ -43,7 +43,7 @@ public class WebViewAppLinkResolver implements AppLinkResolver {
   /**
    * Creates a WebViewAppLinkResolver.
    *
-   * @param context the context in which to create the hidden {@link android.webkit.WebView}.
+   * @param context the context in which to create the hidden {@link WebView}.
    */
   public WebViewAppLinkResolver(Context context) {
     this.context = context;

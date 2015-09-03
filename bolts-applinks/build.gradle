@@ -1,10 +1,9 @@
 import com.android.builder.core.BuilderConstants
 
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.kt3k.coveralls'
 
-group = 'com.parse.bolts'
-version = '1.2.2-SNAPSHOT'
+group = GROUP_NAME
+version = VERSION_NAME
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -25,6 +24,8 @@ android {
 }
 
 dependencies {
+    compile project(':bolts-tasks')
+
     testCompile 'junit:junit:4.12'
 
     androidTestCompile 'com.android.support:support-v4:23.0.1'
@@ -38,7 +39,7 @@ android.libraryVariants.all { variant ->
 
         manifest {
             attributes(
-                    "Bundle-Name": 'bolts-android',
+                    "Bundle-Name": 'bolts-applinks',
                     "Bundle-Version": project.version
             )
         }
@@ -54,6 +55,8 @@ android.libraryVariants.all { variant ->
         artifacts.add('archives', task);
     }
 }
+
+//region Maven
 
 apply plugin: 'maven'
 apply plugin: 'signing'
@@ -75,8 +78,8 @@ uploadArchives {
         }
 
         pom.project {
-            name 'Bolts-Android'
-            artifactId = 'bolts-android'
+            name 'Bolts-AppLinks'
+            artifactId = 'bolts-applinks'
             packaging 'jar'
             description 'Bolts is a collection of low-level libraries designed to make developing mobile apps easier.'
             url 'https://github.com/BoltsFramework/Bolts-Android'
@@ -129,41 +132,5 @@ artifacts {
     archives androidSourcesJar
     archives androidJavadocsJar
 }
-
-//region Code Coverage
-
-apply plugin: 'jacoco'
-
-task jacocoTestReport(type:JacocoReport, dependsOn: "testDebugUnitTest") {
-    group = "Verification"
-    description = "Creates unit test coverage reports for the debug variant."
-
-    classDirectories = fileTree(
-            dir: "${buildDir}/intermediates/classes/debug",
-            excludes: ['**/R.class',
-                       '**/R$*.class',
-                       '**/*$ViewInjector*.*',
-                       '**/BuildConfig.*',
-                       '**/Manifest*.*']
-    )
-
-    sourceDirectories = files("${buildDir.parent}/src/main/java")
-    additionalSourceDirs = files([
-            "${buildDir}/generated/source/buildConfig/debug",
-            "${buildDir}/generated/source/r/debug"
-    ])
-    executionData = files("${buildDir}/jacoco/testDebugUnitTest.exec")
-
-    reports {
-        xml.enabled = true
-        html.enabled = true
-    }
-}
-
-//endregion
-
-//region Coveralls
-
-coveralls.jacocoReportPath = "${buildDir}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
 
 //endregion
