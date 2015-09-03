@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskTest {
@@ -733,7 +734,7 @@ public class TaskTest {
       public Task<?> call() throws Exception {
         final ArrayList<Task<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-          final Task<Void>.TaskCompletionSource tcs = Task.create();
+          final TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
 
           final int number = i;
           Task.callInBackground(new Callable<Void>() {
