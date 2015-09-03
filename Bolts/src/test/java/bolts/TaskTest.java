@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskTest {
@@ -47,6 +48,18 @@ public class TaskTest {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Test
+  public void testCache() {
+    assertSame(Task.forResult(null), Task.forResult(null));
+    Task<Boolean> trueTask = Task.forResult(true);
+    assertTrue(trueTask.getResult());
+    assertSame(trueTask, Task.forResult(true));
+    Task<Boolean> falseTask = Task.forResult(false);
+    assertFalse(falseTask.getResult());
+    assertSame(falseTask, Task.forResult(false));
+    assertSame(Task.cancelled(), Task.cancelled());
   }
 
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")

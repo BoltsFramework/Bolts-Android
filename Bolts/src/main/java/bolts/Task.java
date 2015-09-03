@@ -52,10 +52,21 @@ public class Task<TResult> {
   private boolean cancelled;
   private TResult result;
   private Exception error;
-  private List<Continuation<TResult, Void>> continuations;
+  private List<Continuation<TResult, Void>> continuations = new ArrayList<>();
 
   /* package */ Task() {
-    continuations = new ArrayList<>();
+  }
+
+  private Task(TResult result) {
+    trySetResult(result);
+  }
+
+  private Task(boolean cancelled) {
+    if (cancelled) {
+      trySetCancelled();
+    } else {
+      trySetResult(null);
+    }
   }
 
   /**
@@ -128,6 +139,12 @@ public class Task<TResult> {
    */
   @SuppressWarnings("unchecked")
   public static <TResult> Task<TResult> forResult(TResult value) {
+    if (value == null) {
+      return (Task<TResult>) TASK_NULL;
+    }
+    if (value instanceof Boolean) {
+      return (Task<TResult>) ((Boolean) value ? TASK_TRUE : TASK_FALSE);
+    }
     bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
     tcs.setResult(value);
     return tcs.getTask();
@@ -147,9 +164,7 @@ public class Task<TResult> {
    */
   @SuppressWarnings("unchecked")
   public static <TResult> Task<TResult> cancelled() {
-    bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
-    tcs.setCancelled();
-    return tcs.getTask();
+    return (Task<TResult>) TASK_CANCELLED;
   }
 
   /**
@@ -924,4 +939,9 @@ public class Task<TResult> {
     /* package */ TaskCompletionSource() {
     }
   }
+
+  private static Task<?> TASK_NULL = new Task<>(null);
+  private static Task<Boolean> TASK_TRUE = new Task<>((Boolean) true);
+  private static Task<Boolean> TASK_FALSE = new Task<>((Boolean) false);
+  private static Task<?> TASK_CANCELLED = new Task(true);
 }
