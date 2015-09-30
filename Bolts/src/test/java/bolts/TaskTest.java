@@ -9,7 +9,9 @@
  */
 package bolts;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,6 +27,10 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class TaskTest {
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
   private void runTaskTest(Callable<Task<?>> callable) {
     try {
       Task<?> task = callable.call();
@@ -394,7 +400,7 @@ public class TaskTest {
             assertTrue(task.getResult().isCompleted());
             assertFalse(task.getResult().isCancelled());
             assertFalse(task.getResult().isFaulted());
-            assertEquals(10, (int)task.getResult().getResult());
+            assertEquals(10, (int) task.getResult().getResult());
             return null;
           }
         });
@@ -733,7 +739,7 @@ public class TaskTest {
       public Task<?> call() throws Exception {
         final ArrayList<Task<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-          final Task<Void>.TaskCompletionSource tcs = Task.create();
+          final TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
 
           final int number = i;
           Task.callInBackground(new Callable<Void>() {
@@ -958,17 +964,18 @@ public class TaskTest {
     runTaskTest(new Callable<Task<?>>() {
       public Task<?> call() throws Exception {
         return Task.forResult(null).continueWhile(new Callable<Boolean>() {
-          public Boolean call() throws Exception {
-            return count.get() < 10;
-          }
-        }, new Continuation<Void, Task<Void>>() {
-          public Task<Void> then(Task<Void> task) throws Exception {
-            if (count.incrementAndGet() == 5) {
-              cts.cancel();
-            }
-            return null;
-          }
-        }, Executors.newCachedThreadPool(),
+                                                    public Boolean call() throws Exception {
+                                                      return count.get() < 10;
+                                                    }
+                                                  }, new Continuation<Void, Task<Void>>() {
+                                                    public Task<Void> then(Task<Void> task)
+                                                        throws Exception {
+                                                      if (count.incrementAndGet() == 5) {
+                                                        cts.cancel();
+                                                      }
+                                                      return null;
+                                                    }
+                                                  }, Executors.newCachedThreadPool(),
             cts.getToken()).continueWith(new Continuation<Void, Void>() {
           public Void then(Task<Void> task) throws Exception {
             assertTrue(task.isCancelled());
@@ -978,6 +985,98 @@ public class TaskTest {
         });
       }
     });
+  }
+
+  //region TaskCompletionSource
+
+  @Test
+  public void testTrySetResult() {
+    TaskCompletionSource<String> tcs = new TaskCompletionSource<>();
+    Task<String> task = tcs.getTask();
+    assertFalse(task.isCompleted());
+
+    boolean success = tcs.trySetResult("SHOW ME WHAT YOU GOT");
+    assertTrue(success);
+    assertTrue(task.isCompleted());
+    assertEquals("SHOW ME WHAT YOU GOT", task.getResult());
+  }
+
+  @Test
+  public void testTrySetError() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    Task<Void> task = tcs.getTask();
+    assertFalse(task.isCompleted());
+
+    Exception exception = new RuntimeException("DISQUALIFIED");
+    boolean success = tcs.trySetError(exception);
+    assertTrue(success);
+    assertTrue(task.isCompleted());
+    assertEquals(exception, task.getError());
+  }
+
+  @Test
+  public void testTrySetCanceled() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    Task<Void> task = tcs.getTask();
+    assertFalse(task.isCompleted());
+
+    boolean success = tcs.trySetCancelled();
+    assertTrue(success);
+    assertTrue(task.isCompleted());
+    assertTrue(task.isCancelled());
+  }
+
+  @Test
+  public void testTrySetOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    assertFalse(tcs.trySetResult(null));
+    assertFalse(tcs.trySetError(new RuntimeException()));
+    assertFalse(tcs.trySetCancelled());
+  }
+
+  @Test
+  public void testSetResultOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    thrown.expect(IllegalStateException.class);
+    tcs.setResult(null);
+  }
+
+  @Test
+  public void testSetErrorOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    thrown.expect(IllegalStateException.class);
+    tcs.setError(new RuntimeException());
+  }
+
+  @Test
+  public void testSetCancelledOnCompletedTask() {
+    TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+    tcs.setResult(null);
+
+    thrown.expect(IllegalStateException.class);
+    tcs.setCancelled();
+  }
+
+  //endregion
+
+  //region deprecated
+
+  @SuppressWarnings("deprecation")
+  @Test
+  public void testDeprecatedTaskCompletionSource() {
+    Task<Void>.TaskCompletionSource tcsA = Task.create();
+    tcsA.setResult(null);
+    assertTrue(tcsA.getTask().isCompleted());
+
+    TaskCompletionSource<Void> tcsB = Task.create();
+    tcsB.setResult(null);
+    assertTrue(tcsA.getTask().isCompleted());
   }
 
   @SuppressWarnings("deprecation")
@@ -1010,4 +1109,6 @@ public class TaskTest {
     assertNotSame(error2, aggregate.getErrors().get(2));
     assertEquals(error2, aggregate.getErrors().get(2).getCause());
   }
+
+  //endregion
 }

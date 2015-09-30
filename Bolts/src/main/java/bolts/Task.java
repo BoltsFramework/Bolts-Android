@@ -54,18 +54,15 @@ public class Task<TResult> {
   private Exception error;
   private List<Continuation<TResult, Void>> continuations;
 
-  private Task() {
-    continuations = new ArrayList<Continuation<TResult, Void>>();
+  /* package */ Task() {
+    continuations = new ArrayList<>();
   }
 
   /**
-   * Creates a TaskCompletionSource that orchestrates a Task. This allows the creator of a task to
-   * be solely responsible for its completion.
-   *
-   * @return A new TaskCompletionSource.
+   * @deprecated Please use {@link bolts.TaskCompletionSource()} instead.
    */
   public static <TResult> Task<TResult>.TaskCompletionSource create() {
-    Task<TResult> task = new Task<TResult>();
+    Task<TResult> task = new Task<>();
     return task.new TaskCompletionSource();
   }
 
@@ -129,8 +126,9 @@ public class Task<TResult> {
   /**
    * Creates a completed task with the given value.
    */
+  @SuppressWarnings("unchecked")
   public static <TResult> Task<TResult> forResult(TResult value) {
-    Task<TResult>.TaskCompletionSource tcs = Task.create();
+    bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
     tcs.setResult(value);
     return tcs.getTask();
   }
@@ -139,7 +137,7 @@ public class Task<TResult> {
    * Creates a faulted task with the given error.
    */
   public static <TResult> Task<TResult> forError(Exception error) {
-    Task<TResult>.TaskCompletionSource tcs = Task.create();
+    bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
     tcs.setError(error);
     return tcs.getTask();
   }
@@ -147,8 +145,9 @@ public class Task<TResult> {
   /**
    * Creates a cancelled task.
    */
+  @SuppressWarnings("unchecked")
   public static <TResult> Task<TResult> cancelled() {
-    Task<TResult>.TaskCompletionSource tcs = Task.create();
+    bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
     tcs.setCancelled();
     return tcs.getTask();
   }
@@ -184,7 +183,7 @@ public class Task<TResult> {
       return Task.forResult(null);
     }
 
-    final Task<Void>.TaskCompletionSource tcs = Task.create();
+    final bolts.TaskCompletionSource<Void> tcs = new bolts.TaskCompletionSource<>();
     final ScheduledFuture<?> scheduled = executor.schedule(new Runnable() {
       @Override
       public void run() {
@@ -265,7 +264,7 @@ public class Task<TResult> {
    */
   public static <TResult> Task<TResult> call(final Callable<TResult> callable, Executor executor,
       final CancellationToken ct) {
-    final Task<TResult>.TaskCompletionSource tcs = Task.create();
+    final bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
     executor.execute(new Runnable() {
       @Override
       public void run() {
@@ -320,7 +319,7 @@ public class Task<TResult> {
       return Task.forResult(null);
     }
 
-    final Task<Task<TResult>>.TaskCompletionSource firstCompleted = Task.create();
+    final bolts.TaskCompletionSource<Task<TResult>> firstCompleted = new bolts.TaskCompletionSource<>();
     final AtomicBoolean isAnyTaskComplete = new AtomicBoolean(false);
 
     for (Task<TResult> task : tasks) {
@@ -355,7 +354,7 @@ public class Task<TResult> {
       return Task.forResult(null);
     }
       
-    final Task<Task<?>>.TaskCompletionSource firstCompleted = Task.create();
+    final bolts.TaskCompletionSource<Task<?>> firstCompleted = new bolts.TaskCompletionSource<>();
     final AtomicBoolean isAnyTaskComplete = new AtomicBoolean(false);
       
     for (Task<?> task : tasks) {
@@ -439,8 +438,8 @@ public class Task<TResult> {
       return Task.forResult(null);
     }
 
-    final Task<Void>.TaskCompletionSource allFinished = Task.create();
-    final ArrayList<Exception> causes = new ArrayList<Exception>();
+    final bolts.TaskCompletionSource<Void> allFinished = new bolts.TaskCompletionSource<>();
+    final ArrayList<Exception> causes = new ArrayList<>();
     final Object errorLock = new Object();
     final AtomicInteger count = new AtomicInteger(tasks.size());
     final AtomicBoolean isCancelled = new AtomicBoolean(false);
@@ -520,7 +519,7 @@ public class Task<TResult> {
       final Continuation<Void, Task<Void>> continuation, final Executor executor,
       final CancellationToken ct) {
     final Capture<Continuation<Void, Task<Void>>> predicateContinuation =
-        new Capture<Continuation<Void, Task<Void>>>();
+        new Capture<>();
     predicateContinuation.set(new Continuation<Void, Task<Void>>() {
       @Override
       public Task<Void> then(Task<Void> task) throws Exception {
@@ -557,7 +556,7 @@ public class Task<TResult> {
       final Continuation<TResult, TContinuationResult> continuation, final Executor executor,
       final CancellationToken ct) {
     boolean completed;
-    final Task<TContinuationResult>.TaskCompletionSource tcs = Task.create();
+    final bolts.TaskCompletionSource<TContinuationResult> tcs = new bolts.TaskCompletionSource<>();
     synchronized (lock) {
       completed = this.isCompleted();
       if (!completed) {
@@ -611,7 +610,7 @@ public class Task<TResult> {
       final Continuation<TResult, Task<TContinuationResult>> continuation, final Executor executor,
       final CancellationToken ct) {
     boolean completed;
-    final Task<TContinuationResult>.TaskCompletionSource tcs = Task.create();
+    final bolts.TaskCompletionSource<TContinuationResult> tcs = new bolts.TaskCompletionSource<>();
     synchronized (lock) {
       completed = this.isCompleted();
       if (!completed) {
@@ -769,7 +768,7 @@ public class Task<TResult> {
    *          scheduled on a different thread).
    */
   private static <TContinuationResult, TResult> void completeImmediately(
-      final Task<TContinuationResult>.TaskCompletionSource tcs,
+      final bolts.TaskCompletionSource<TContinuationResult> tcs,
       final Continuation<TResult, TContinuationResult> continuation, final Task<TResult> task,
       Executor executor, final CancellationToken ct) {
     executor.execute(new Runnable() {
@@ -809,7 +808,7 @@ public class Task<TResult> {
    *          scheduled on a different thread).
    */
   private static <TContinuationResult, TResult> void completeAfterTask(
-      final Task<TContinuationResult>.TaskCompletionSource tcs,
+      final bolts.TaskCompletionSource<TContinuationResult> tcs,
       final Continuation<TResult, Task<TContinuationResult>> continuation,
       final Task<TResult> task, final Executor executor,
       final CancellationToken ct) {
@@ -870,95 +869,59 @@ public class Task<TResult> {
   }
 
   /**
-   * Allows safe orchestration of a task's completion, preventing the consumer from prematurely
-   * completing the task. Essentially, it represents the producer side of a Task<TResult>, providing
-   * access to the consumer side through the getTask() method while isolating the Task's completion
-   * mechanisms from the consumer.
+   * Sets the cancelled flag on the Task if the Task hasn't already been completed.
    */
-  public class TaskCompletionSource {
-    private TaskCompletionSource() {
-    }
-
-    /**
-     * @return the Task associated with this TaskCompletionSource.
-     */
-    public Task<TResult> getTask() {
-      return Task.this;
-    }
-
-    /**
-     * Sets the cancelled flag on the Task if the Task hasn't already been completed.
-     */
-    public boolean trySetCancelled() {
-      synchronized (lock) {
-        if (complete) {
-          return false;
-        }
-        complete = true;
-        cancelled = true;
-        lock.notifyAll();
-        runContinuations();
-        return true;
+  /* package */ boolean trySetCancelled() {
+    synchronized (lock) {
+      if (complete) {
+        return false;
       }
+      complete = true;
+      cancelled = true;
+      lock.notifyAll();
+      runContinuations();
+      return true;
     }
+  }
 
-    /**
-     * Sets the result on the Task if the Task hasn't already been completed.
-     */
-    public boolean trySetResult(TResult result) {
-      synchronized (lock) {
-        if (complete) {
-          return false;
-        }
-        complete = true;
-        Task.this.result = result;
-        lock.notifyAll();
-        runContinuations();
-        return true;
+  /**
+   * Sets the result on the Task if the Task hasn't already been completed.
+   */
+  /* package */ boolean trySetResult(TResult result) {
+    synchronized (lock) {
+      if (complete) {
+        return false;
       }
+      complete = true;
+      Task.this.result = result;
+      lock.notifyAll();
+      runContinuations();
+      return true;
     }
+  }
 
-    /**
-     * Sets the error on the Task if the Task hasn't already been completed.
-     */
-    public boolean trySetError(Exception error) {
-      synchronized (lock) {
-        if (complete) {
-          return false;
-        }
-        complete = true;
-        Task.this.error = error;
-        lock.notifyAll();
-        runContinuations();
-        return true;
+  /**
+   * Sets the error on the Task if the Task hasn't already been completed.
+   */
+  /* package */ boolean trySetError(Exception error) {
+    synchronized (lock) {
+      if (complete) {
+        return false;
       }
+      complete = true;
+      Task.this.error = error;
+      lock.notifyAll();
+      runContinuations();
+      return true;
     }
+  }
 
-    /**
-     * Sets the cancelled flag on the task, throwing if the Task has already been completed.
-     */
-    public void setCancelled() {
-      if (!trySetCancelled()) {
-        throw new IllegalStateException("Cannot cancel a completed task.");
-      }
-    }
+  /**
+   * @deprecated Please use {@link bolts.TaskCompletionSource} instead.
+   */
+  public class TaskCompletionSource extends bolts.TaskCompletionSource<TResult> {
 
-    /**
-     * Sets the result of the Task, throwing if the Task has already been completed.
-     */
-    public void setResult(TResult result) {
-      if (!trySetResult(result)) {
-        throw new IllegalStateException("Cannot set the result of a completed task.");
-      }
-    }
-
-    /**
-     * Sets the error of the Task, throwing if the Task has already been completed.
-     */
-    public void setError(Exception error) {
-      if (!trySetError(error)) {
-        throw new IllegalStateException("Cannot set the error on a completed task.");
-      }
+    /* package */ TaskCompletionSource() {
     }
   }
 }
