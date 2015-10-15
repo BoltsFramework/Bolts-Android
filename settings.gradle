@@ -1,1 +1,1 @@
-include ':Bolts', ':BoltsTest'
+include ':Bolts'
