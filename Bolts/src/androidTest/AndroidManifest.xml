@@ -1,7 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="bolts.android" >
-
-    <uses-permission android:name="android.permission.INTERNET"/>
+          package="bolts.test" >
 
     <application
         android:allowBackup="false"

@@ -26,6 +26,8 @@ android {
 
 dependencies {
     testCompile 'junit:junit:4.12'
+
+    androidTestCompile 'com.android.support:support-v4:22.2.1'
 }
 
 android.libraryVariants.all { variant ->

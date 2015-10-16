@@ -34,6 +34,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class AppLinkTest extends InstrumentationTestCase {
+
+  private static final String PACKAGE_NAME = "bolts.test";
+
   private List<Intent> openedIntents;
   private Context activityInterceptor;
 
@@ -421,7 +424,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testSimpleAppLinkNavigationExplicit() throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity",
             Uri.parse("bolts://"),
             "Bolts");
@@ -443,7 +446,7 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testSimpleAppLinkNavigationImplicit() throws Exception {
     // Don't provide a class name so that implicit resolution occurs.
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             null,
             Uri.parse("bolts://"),
             "Bolts");
@@ -464,7 +467,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testSimpleAppLinkNavigationWithExtras() throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity",
             Uri.parse("bolts://"),
             "Bolts");
@@ -490,7 +493,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testSimpleAppLinkNavigationWithAppLinkData() throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity",
             Uri.parse("bolts://"),
             "Bolts");
@@ -516,7 +519,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testSimpleAppLinkNavigationWithExtrasAndAppLinkData() throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity",
             Uri.parse("bolts://"),
             "Bolts");
@@ -547,7 +550,7 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testSimpleAppLinkNavigationWithExtrasAndAppLinkDataFallBackToWeb()
           throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity3",
             Uri.parse("bolts3://"),
             "Bolts");
@@ -579,11 +582,11 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testAppLinkNavigationMultipleTargetsNoFallbackExplicit() throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity",
             Uri.parse("bolts://"),
             "Bolts");
-    AppLink.Target target2 = new AppLink.Target("bolts.android",
+    AppLink.Target target2 = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity2",
             Uri.parse("bolts2://"),
             "Bolts 2");
@@ -605,11 +608,11 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testAppLinkNavigationMultipleTargetsNoFallbackImplicit() throws Exception {
     // Remove the class name to make it implicit
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             null,
             Uri.parse("bolts://"),
             "Bolts");
-    AppLink.Target target2 = new AppLink.Target("bolts.android",
+    AppLink.Target target2 = new AppLink.Target(PACKAGE_NAME,
             null,
             Uri.parse("bolts2://"),
             "Bolts 2");
@@ -630,11 +633,11 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testAppLinkNavigationMultipleTargetsWithFallbackExplicit() throws Exception {
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.InvalidActivity",
             Uri.parse("bolts://"),
             "Bolts");
-    AppLink.Target target2 = new AppLink.Target("bolts.android",
+    AppLink.Target target2 = new AppLink.Target(PACKAGE_NAME,
             "bolts.utils.BoltsActivity2",
             Uri.parse("bolts2://"),
             "Bolts 2");
@@ -656,11 +659,11 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testAppLinkNavigationMultipleTargetsWithFallbackImplicit() throws Exception {
     // Remove the class name to make it implicit
-    AppLink.Target target = new AppLink.Target("bolts.android",
+    AppLink.Target target = new AppLink.Target(PACKAGE_NAME,
             null,
             Uri.parse("invalid://"),
             "Bolts");
-    AppLink.Target target2 = new AppLink.Target("bolts.android",
+    AppLink.Target target2 = new AppLink.Target(PACKAGE_NAME,
             null,
             Uri.parse("bolts2://"),
             "Bolts 2");
@@ -709,7 +712,7 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testSimpleAppLinkURLNavigationExplicit() throws Exception {
     String html = getHtmlWithMetaTags("al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts://",
             "al:android:class", "bolts.utils.BoltsActivity",
             "al:android:app_name", "Bolts");
@@ -731,7 +734,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   public void testSimpleAppLinkURLNavigationImplicit() throws Exception {
     // Don't provide a class name so that implicit resolution occurs.
     String html = getHtmlWithMetaTags("al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts://",
             "al:android:app_name", "Bolts");
     Uri uri = getURLForData(html);
@@ -751,13 +754,13 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testAppLinkURLNavigationMultipleTargetsNoFallbackExplicit() throws Exception {
     String html = getHtmlWithMetaTags("al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts://",
             "al:android:class", "bolts.utils.BoltsActivity",
             "al:android:app_name", "Bolts",
 
             "al:android",
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts2://",
             "al:android:class", "bolts.utils.BoltsActivity2",
             "al:android:app_name", "Bolts 2");
@@ -779,12 +782,12 @@ public class AppLinkTest extends InstrumentationTestCase {
   public void testAppLinkURLNavigationMultipleTargetsNoFallbackImplicit() throws Exception {
     // Remove the class name to make it implicit
     String html = getHtmlWithMetaTags("al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts://",
             "al:android:app_name", "Bolts",
 
             "al:android",
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts2://",
             "al:android:app_name", "Bolts 2");
     Uri uri = getURLForData(html);
@@ -804,13 +807,13 @@ public class AppLinkTest extends InstrumentationTestCase {
 
   public void testAppLinkURLNavigationMultipleTargetsWithFallbackExplicit() throws Exception {
     String html = getHtmlWithMetaTags("al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts://",
             "al:android:class", "bolts.utils.InvalidActivity",
             "al:android:app_name", "Bolts",
 
             "al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts2://",
             "al:android:class", "bolts.utils.BoltsActivity2",
             "al:android:app_name", "Bolts 2");
@@ -832,12 +835,12 @@ public class AppLinkTest extends InstrumentationTestCase {
   public void testAppLinkURLNavigationMultipleTargetsWithFallbackImplicit() throws Exception {
     // Remove the class name to make it implicit
     String html = getHtmlWithMetaTags("al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "invalid://",
             "al:android:app_name", "Bolts",
 
             "al:android", null,
-            "al:android:package", "bolts.android",
+            "al:android:package", PACKAGE_NAME,
             "al:android:url", "bolts2://",
             "al:android:app_name", "Bolts 2");
     Uri uri = getURLForData(html);
