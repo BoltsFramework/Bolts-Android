@@ -1,1 +1,3 @@
-include ':Bolts'
+include ':bolts-android',
+        ':bolts-tasks',
+        ':bolts-applinks'

@@ -22,9 +22,15 @@ before_script:
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
+  - adb logcat -v time > logcat.txt &
 
 script:
   - ./gradlew build testDebug connectedCheck --continue --info
+
+after_script:
+  - travis_fold:start:logcat
+  - cat logcat.txt
+  - travis_fold:end:logcat
 
 after_success:
   - ./gradlew jacocoTestReport coveralls

@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AppLinkTest extends InstrumentationTestCase {
 
-  private static final String PACKAGE_NAME = "bolts.test";
+  private static final String PACKAGE_NAME = "bolts.applinks.test";
 
   private List<Intent> openedIntents;
   private Context activityInterceptor;

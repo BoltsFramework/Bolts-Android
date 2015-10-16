@@ -29,7 +29,7 @@ import java.util.Map;
 
 /**
  * Represents a pending request to navigate to an App Link. Most developers will simply use
- * {@link #navigateInBackground(android.content.Context, android.net.Uri)} to open a URL, but
+ * {@link #navigateInBackground(Context, Uri)} to open a URL, but
  * developers can build custom requests with additional navigation and app data attached to them
  * by creating AppLinkNavigations themselves.
  */
@@ -45,8 +45,8 @@ public class AppLinkNavigation {
   private static AppLinkResolver defaultResolver;
 
   /**
-   * The result of calling {@link #navigate(android.content.Context)} on an
-   * {@link bolts.AppLinkNavigation}.
+   * The result of calling {@link #navigate(Context)} on an
+   * {@link AppLinkNavigation}.
    */
   public static enum NavigationResult {
     /**
@@ -263,7 +263,7 @@ public class AppLinkNavigation {
    * Performs the navigation.
    *
    * @param context the Context from which the navigation should be performed.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public NavigationResult navigate(Context context) {
     PackageManager pm = context.getPackageManager();
@@ -339,7 +339,7 @@ public class AppLinkNavigation {
 
   /**
    * Sets the default resolver to be used for App Link resolution. Setting this to null will cause
-   * the {@link #navigateInBackground(android.content.Context, android.net.Uri)} methods to use the
+   * the {@link #navigateInBackground(Context, Uri)} methods to use the
    * basic, built-in resolver provided by Bolts.
    *
    * @param resolver the resolver to use by default.
@@ -367,24 +367,24 @@ public class AppLinkNavigation {
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink}.
+   * Navigates to an {@link AppLink}.
    *
    * @param context the Context from which the navigation should be performed.
    * @param appLink the AppLink being navigated to.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static NavigationResult navigate(Context context, AppLink appLink) {
     return new AppLinkNavigation(appLink, null, null).navigate(context);
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink} for the given destination using the App Link resolution
+   * Navigates to an {@link AppLink} for the given destination using the App Link resolution
    * strategy specified.
    *
    * @param context     the Context from which the navigation should be performed.
    * @param destination the destination URL for the App Link.
    * @param resolver    the resolver to use for fetching App Link metadata.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static Task<NavigationResult> navigateInBackground(final Context context,
                                                             Uri destination,
@@ -399,13 +399,13 @@ public class AppLinkNavigation {
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink} for the given destination using the App Link resolution
+   * Navigates to an {@link AppLink} for the given destination using the App Link resolution
    * strategy specified.
    *
    * @param context     the Context from which the navigation should be performed.
    * @param destination the destination URL for the App Link.
    * @param resolver    the resolver to use for fetching App Link metadata.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static Task<NavigationResult> navigateInBackground(Context context,
                                                             URL destination,
@@ -414,13 +414,13 @@ public class AppLinkNavigation {
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink} for the given destination using the App Link resolution
+   * Navigates to an {@link AppLink} for the given destination using the App Link resolution
    * strategy specified.
    *
    * @param context        the Context from which the navigation should be performed.
    * @param destinationUrl the destination URL for the App Link.
    * @param resolver       the resolver to use for fetching App Link metadata.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static Task<NavigationResult> navigateInBackground(Context context,
                                                             String destinationUrl,
@@ -429,12 +429,12 @@ public class AppLinkNavigation {
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink} for the given destination using the default
+   * Navigates to an {@link AppLink} for the given destination using the default
    * App Link resolution strategy.
    *
    * @param context     the Context from which the navigation should be performed.
    * @param destination the destination URL for the App Link.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static Task<NavigationResult> navigateInBackground(Context context,
                                                             Uri destination) {
@@ -444,12 +444,12 @@ public class AppLinkNavigation {
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink} for the given destination using the default
+   * Navigates to an {@link AppLink} for the given destination using the default
    * App Link resolution strategy.
    *
    * @param context     the Context from which the navigation should be performed.
    * @param destination the destination URL for the App Link.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static Task<NavigationResult> navigateInBackground(Context context,
                                                             URL destination) {
@@ -459,12 +459,12 @@ public class AppLinkNavigation {
   }
 
   /**
-   * Navigates to an {@link bolts.AppLink} for the given destination using the default
+   * Navigates to an {@link AppLink} for the given destination using the default
    * App Link resolution strategy.
    *
    * @param context        the Context from which the navigation should be performed.
    * @param destinationUrl the destination URL for the App Link.
-   * @return the {@link bolts.AppLinkNavigation.NavigationResult} performed by navigating.
+   * @return the {@link NavigationResult} performed by navigating.
    */
   public static Task<NavigationResult> navigateInBackground(Context context,
                                                             String destinationUrl) {

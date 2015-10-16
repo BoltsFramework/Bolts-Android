@@ -49,13 +49,13 @@ public class MeasurementEvent {
   // Events
   /**
    * The name for event of navigating out to other apps. Event raised in navigation methods, e.g.
-   * {@link bolts.AppLinkNavigation#navigateInBackground(android.content.Context, String)}
+   * {@link bolts.AppLinkNavigation#navigateInBackground(Context, String)}
    **/
   public static final String APP_LINK_NAVIGATE_OUT_EVENT_NAME = "al_nav_out";
 
   /**
    *  The name for event of handling incoming applink intent. Event raised in
-   *  {@link bolts.AppLinks#getTargetUrlFromInboundIntent(android.content.Context, android.content.Intent)}
+   *  {@link AppLinks#getTargetUrlFromInboundIntent(Context, Intent)}
    **/
   public static final String APP_LINK_NAVIGATE_IN_EVENT_NAME = "al_nav_in";
 
