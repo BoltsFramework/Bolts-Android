@@ -76,6 +76,21 @@ signing {
     sign configurations.archives
 }
 
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar (type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
 //endregion
 
 //region Code Coverage
