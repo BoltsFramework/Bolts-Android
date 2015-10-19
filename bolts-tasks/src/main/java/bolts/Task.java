@@ -406,7 +406,7 @@ public class Task<TResult> {
    * <p/>
    * If the supplied collection contains no tasks, the returned task will immediately transition to
    * a completed state before it's returned to the caller.
-   * The returned {@code List&lt;TResult&gt;} will contain of 0 elements.
+   * The returned {@code List&lt;TResult&gt;} will contain 0 elements.
    *
    * @param tasks The tasks that the return value will wait for before completing.
    * @return A Task that will resolve to {@code List&lt;TResult&gt;} when all the tasks are resolved.
