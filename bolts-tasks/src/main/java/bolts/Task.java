@@ -20,12 +20,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents the result of an asynchronous operation.
- * 
+ *
  * @param <TResult>
  *          The type of the result of the task.
  */
@@ -110,6 +111,30 @@ public class Task<TResult> {
    */
   public TResult getResult() {
     synchronized (lock) {
+      return result;
+    }
+  }
+
+  /**
+   * @return The result of the task.
+   */
+  public TResult waitAndGetResult() throws InterruptedException, TimeoutException {
+    return waitAndGetResult(0, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * @return The result of the task.
+   */
+  public TResult waitAndGetResult(long duration, TimeUnit timeUnit) throws InterruptedException, TimeoutException {
+    synchronized (lock) {
+      if (!waitForCompletion(duration, timeUnit))
+        throw new TimeoutException();
+      if (isFaulted()) {
+        throw new RuntimeException(getError());
+      }
+      if (isCancelled()) {
+        throw new TaskCanceledException(this);
+      }
       return result;
     }
   }
@@ -340,7 +365,7 @@ public class Task<TResult> {
    *
    * @param tasks
    *          The tasks to wait on for completion.
-   * @return A task that represents the completion of one of the supplied tasks. 
+   * @return A task that represents the completion of one of the supplied tasks.
    *         The return task's result is the task that completed.
    */
   public static <TResult> Task<Task<TResult>> whenAnyResult(Collection<? extends Task<TResult>> tasks) {
@@ -374,7 +399,7 @@ public class Task<TResult> {
    *
    * @param tasks
    *          The tasks to wait on for completion.
-   * @return A task that represents the completion of one of the supplied tasks. 
+   * @return A task that represents the completion of one of the supplied tasks.
    *         The return task's Result is the task that completed.
    */
   @SuppressWarnings("unchecked")
@@ -382,10 +407,10 @@ public class Task<TResult> {
     if (tasks.size() == 0) {
       return Task.forResult(null);
     }
-      
+
     final bolts.TaskCompletionSource<Task<?>> firstCompleted = new bolts.TaskCompletionSource<>();
     final AtomicBoolean isAnyTaskComplete = new AtomicBoolean(false);
-      
+
     for (Task<?> task : tasks) {
       ((Task<Object>) task).continueWith(new Continuation<Object, Void>() {
         @Override

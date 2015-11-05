@@ -20,6 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -83,6 +84,78 @@ public class TaskTest {
     assertTrue(cancelled.isCompleted());
     assertFalse(cancelled.isFaulted());
     assertTrue(cancelled.isCancelled());
+  }
+
+  @Test
+  public void testWaitAndGetResultSuccess() throws InterruptedException, TimeoutException {
+    Task<Integer> complete = Task.forResult(5);
+
+    assertEquals(5, complete.waitAndGetResult().intValue());
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void testWaitAndGetResultError() throws InterruptedException, TimeoutException {
+    Task<Integer> error = Task.forError(new RuntimeException());
+
+    assertEquals(5, error.waitAndGetResult().intValue());
+  }
+
+  @Test(expected = TaskCanceledException.class)
+  public void testWaitAndGetResultCanceled() throws InterruptedException, TimeoutException {
+    Task<Integer> cancelled = Task.cancelled();
+
+    assertEquals(5, cancelled.waitAndGetResult().intValue());
+  }
+
+  @Test
+  public void testWaitAndGetResultDelayedSuccess() throws InterruptedException, TimeoutException {
+    final Task<Integer> complete = Task.forResult(5);
+    Task<Integer> task = Task.delay(200).continueWithTask(new Continuation<Void, Task<Integer>>() {
+      @Override
+      public Task<Integer> then(Task<Void> task) throws Exception {
+        return complete;
+      }
+    });
+
+    assertEquals(5, task.waitAndGetResult().intValue());
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void testWaitAndGetResultDelayedError() throws InterruptedException, TimeoutException {
+    final Task<Integer> error = Task.forError(new RuntimeException());
+    Task<Integer> task = Task.delay(200).continueWithTask(new Continuation<Void, Task<Integer>>() {
+      @Override
+      public Task<Integer> then(Task<Void> task) throws Exception {
+        return error;
+      }
+    });
+
+    assertEquals(5, task.waitAndGetResult().intValue());
+  }
+
+  @Test(expected = TaskCanceledException.class)
+  public void testWaitAndGetResultDelayedCanceled() throws InterruptedException, TimeoutException {
+    final Task<Integer> cancelled = Task.cancelled();
+    Task<Integer> task = Task.delay(200).continueWithTask(new Continuation<Void, Task<Integer>>() {
+      @Override
+      public Task<Integer> then(Task<Void> task) throws Exception {
+        return cancelled;
+      }
+    });
+
+    assertEquals(5, task.waitAndGetResult().intValue());
+  }
+
+  @Test(expected = TimeoutException.class)
+  public void testWaitAndGetResultTimeOut() throws InterruptedException, TimeoutException {
+    Task<Integer> task = Task.delay(5000).continueWith(new Continuation<Void, Integer>() {
+      @Override
+      public Integer then(Task<Void> task) throws Exception {
+        return 5;
+      }
+    });
+
+    assertEquals(5, task.waitAndGetResult(1, TimeUnit.MILLISECONDS).intValue());
   }
 
   @Test
