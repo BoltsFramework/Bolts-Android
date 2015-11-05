@@ -135,6 +135,20 @@ public class Task<TResult> {
   }
 
   /**
+   * Blocks until the task is complete or times out.
+   * @return {@code true} if the task completed (has a result, an error, or was cancelled.
+   *         {@code false} otherwise.
+   */
+  public boolean waitForCompletion(long duration, TimeUnit timeUnit) throws InterruptedException {
+    synchronized (lock) {
+      if (!isCompleted()) {
+        lock.wait(timeUnit.toMillis(duration));
+      }
+      return complete;
+    }
+  }
+
+  /**
    * Creates a completed task with the given value.
    */
   @SuppressWarnings("unchecked")

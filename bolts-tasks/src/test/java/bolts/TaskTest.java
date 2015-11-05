@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -307,6 +308,27 @@ public class TaskTest {
     });
     task.waitForCompletion();
     assertTrue(task.isCompleted());
+    assertEquals(5, task.getResult().intValue());
+  }
+
+  @Test
+  public void testBackgroundCallWaitingWithTimeouts() throws Exception {
+    final Object sync = new Object();
+
+    Task<Integer> task = Task.callInBackground(new Callable<Integer>() {
+      public Integer call() throws Exception {
+        synchronized (sync) {
+          sync.wait();
+        }
+        return 5;
+      }
+    });
+    assertFalse(task.waitForCompletion(100, TimeUnit.MILLISECONDS));
+    synchronized (sync) {
+      sync.notify();
+    }
+    task.waitForCompletion();
+    assertTrue(task.waitForCompletion(100, TimeUnit.MILLISECONDS));
     assertEquals(5, task.getResult().intValue());
   }
 
