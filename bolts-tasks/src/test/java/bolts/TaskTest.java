@@ -405,6 +405,40 @@ public class TaskTest {
   }
 
   @Test
+  public void testUnobservedError() throws InterruptedException {
+    try {
+      final Object sync = new Object();
+      Task.setUnobservedExceptionHandler(new Task.UnobservedExceptionHandler() {
+        @Override
+        public void unobservedException(Task<?> t, UnobservedTaskException e) {
+          synchronized (sync) {
+            sync.notify();
+          }
+        }
+      });
+
+      synchronized (sync) {
+        startFailedTask();
+        System.gc();
+        sync.wait();
+      }
+
+    } finally {
+      Task.setUnobservedExceptionHandler(null);
+    }
+  }
+
+  // runs in a separate method to ensure it is out of scope.
+  private void startFailedTask() throws InterruptedException {
+    Task.call(new Callable<Object>() {
+      @Override
+      public Object call() throws Exception {
+        throw new RuntimeException();
+      }
+    }).waitForCompletion();
+  }
+
+  @Test
   public void testWhenAllNoTasks() {
     Task<Void> task = Task.whenAll(new ArrayList<Task<Void>>());
 

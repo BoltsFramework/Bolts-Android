@@ -47,11 +47,54 @@ public class Task<TResult> {
    */
   public static final Executor UI_THREAD_EXECUTOR = AndroidExecutors.uiThread();
 
+  /**
+   * Interface for handlers invoked when a failed <tt>Task</tt> is about to be
+   * finalized, but the exception has not been consumed.
+   *
+   * <p>The handler will execute in the GC thread, so if the handler needs to do
+   * anything time consuming or complex it is a good idea to fire off a Task
+   * to handle the exception.
+   *
+   * @see #getUnobservedExceptionHandler
+   * @see #setUnobservedExceptionHandler
+   */
+  public interface UnobservedExceptionHandler {
+    /**
+     * Method invoked when the given task has an unobserved exception.
+     * <p>Any exception thrown by this method will be ignored.
+     * @param t the task
+     * @param e the exception
+     */
+    void unobservedException(Task<?> t, UnobservedTaskException e);
+  }
+
+  // null unless explicitly set
+  private static volatile UnobservedExceptionHandler unobservedExceptionHandler;
+
+  /**
+   * Returns the handler invoked when a task has an unobserved
+   * exception or null.
+   */
+  public static UnobservedExceptionHandler getUnobservedExceptionHandler() {
+    return unobservedExceptionHandler;
+  }
+
+  /**
+   * Set the handler invoked when a task has an unobserved exception.
+   * @param eh the object to use as an unobserved exception handler. If
+   *           <tt>null</tt> then unobserved exceptions will be ignored.
+   */
+  public static void setUnobservedExceptionHandler(UnobservedExceptionHandler eh) {
+    unobservedExceptionHandler = eh;
+  }
+
   private final Object lock = new Object();
   private boolean complete;
   private boolean cancelled;
   private TResult result;
   private Exception error;
+  private boolean errorHasBeenObserved;
+  private UnobservedErrorNotifier unobservedErrorNotifier;
   private List<Continuation<TResult, Void>> continuations = new ArrayList<>();
 
   /* package */ Task() {
@@ -101,7 +144,7 @@ public class Task<TResult> {
    */
   public boolean isFaulted() {
     synchronized (lock) {
-      return error != null;
+      return getError() != null;
     }
   }
 
@@ -119,6 +162,13 @@ public class Task<TResult> {
    */
   public Exception getError() {
     synchronized (lock) {
+      if (error != null) {
+        errorHasBeenObserved = true;
+        if (unobservedErrorNotifier != null) {
+          unobservedErrorNotifier.setObserved();
+          unobservedErrorNotifier = null;
+        }
+      }
       return error;
     }
   }
@@ -357,6 +407,8 @@ public class Task<TResult> {
         public Void then(Task<TResult> task) {
           if (isAnyTaskComplete.compareAndSet(false, true)) {
             firstCompleted.setResult(task);
+          } else {
+            Throwable ensureObserved = task.getError();
           }
           return null;
         }
@@ -392,6 +444,8 @@ public class Task<TResult> {
         public Void then(Task<Object> task) {
           if (isAnyTaskComplete.compareAndSet(false, true)) {
             firstCompleted.setResult(task);
+          } else {
+            Throwable ensureObserved = task.getError();
           }
           return null;
         }
@@ -939,8 +993,11 @@ public class Task<TResult> {
       }
       complete = true;
       Task.this.error = error;
+      errorHasBeenObserved = false;
       lock.notifyAll();
       runContinuations();
+      if (!errorHasBeenObserved && getUnobservedExceptionHandler() != null)
+        unobservedErrorNotifier = new UnobservedErrorNotifier(this);
       return true;
     }
   }
