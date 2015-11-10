@@ -2,7 +2,8 @@ Bolts
 ============
 [![Build Status][build-status-svg]][build-status-link]
 [![Coverage Status][coverage-status-svg]][coverage-status-link]
-[![Maven Central][maven-svg]][maven-link]
+[![Maven Central][maven-tasks-svg]][maven-tasks-link]
+[![Maven Central][maven-applinks-svg]][maven-applinks-link]
 [![License][license-svg]][license-link]
 
 Bolts is a collection of low-level libraries designed to make developing mobile
@@ -576,11 +577,13 @@ App Links Measurement Events sends additional information from App Links Intents
 
  [build-status-svg]: http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat
  [build-status-link]: https://travis-ci.org/BoltsFramework/Bolts-Android
- [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github
+ [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github?style=flat
  [coverage-status-link]: https://coveralls.io/github/BoltsFramework/Bolts-Android?branch=master
- [maven-svg]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android/badge.svg?style=flat
- [maven-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-android
- [license-svg]: https://img.shields.io/badge/license-BSD-lightgrey.svg
+ [maven-tasks-svg]: https://img.shields.io/maven-central/v/com.parse.bolts/bolts-tasks.svg?label=bolts-tasks&style=flat
+ [maven-tasks-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-tasks
+ [maven-applinks-svg]: https://img.shields.io/maven-central/v/com.parse.bolts/bolts-applinks.svg?label=bolts-applinks&style=flat
+ [maven-applinks-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-applinks
+ [license-svg]: https://img.shields.io/badge/license-BSD-lightgrey.svg?style=flat
  [license-link]: https://github.com/BoltsFramework/Bolts-Android/blob/master/LICENSE
 
  [latest]: https://search.maven.org/remote_content?g=com.parse.bolts&a=bolts-android&v=LATEST
