@@ -182,13 +182,13 @@ When you're getting started, you can just use the tasks returned from methods li
 public Task<String> succeedAsync() {
   // Java Generics syntax can be confusing sometimes. :)
   // This creates a TCS for a Task<String>.
-  Task<String>.TaskCompletionSource successful = Task.create();
+  Task<String>.TaskCompletionSource successful = Task.<String>create();
   successful.setResult("The good result.");
   return successful.getTask();
 }
 
 public Task<String> failAsync() {
-  Task<String>.TaskCompletionSource failed = Task.create();
+  Task<String>.TaskCompletionSource failed = Task.<String>create();
   failed.setError(new RuntimeException("An error message."));
   return failed.getTask();
 }
@@ -208,7 +208,7 @@ With these tools, it's easy to make your own asynchronous functions that return 
 
 ```java
 public Task<ParseObject> fetchAsync(ParseObject obj) {
-  final Task<ParseObject>.TaskCompletionSource tcs = Task.create();
+  final Task<ParseObject>.TaskCompletionSource tcs = Task.<ParseObject>create();
   obj.fetchInBackground(new GetCallback() {
     public void done(ParseObject object, ParseException e) {
      if (e == null) {
@@ -392,7 +392,7 @@ To cancel an asynchronous call using a token you must first modify the method to
  */
 public Task<Integer> getIntAsync(final CancellationToken ct) {
   // Create a new Task
-  final Task<Integer>.TaskCompletionSource tcs = Task.create();
+  final Task<Integer>.TaskCompletionSource tcs = Task.<Integer>create();
 
   new Thread() {
     @Override
