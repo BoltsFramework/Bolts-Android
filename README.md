@@ -586,5 +586,5 @@ App Links Measurement Events sends additional information from App Links Intents
  [license-svg]: https://img.shields.io/badge/license-BSD-lightgrey.svg?style=flat
  [license-link]: https://github.com/BoltsFramework/Bolts-Android/blob/master/LICENSE
 
- [latest]: https://search.maven.org/remote_content?g=com.parse.bolts&a=bolts-android&v=LATEST
+ [latest]: https://search.maven.org/remote_content?g=com.parse.bolts&a=bolts-tasks&v=LATEST
  [snap]: https://oss.sonatype.org/content/repositories/snapshots/
