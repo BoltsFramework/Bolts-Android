@@ -294,23 +294,28 @@ public class Task<TResult> {
   public static <TResult> Task<TResult> call(final Callable<TResult> callable, Executor executor,
       final CancellationToken ct) {
     final bolts.TaskCompletionSource<TResult> tcs = new bolts.TaskCompletionSource<>();
-    executor.execute(new Runnable() {
-      @Override
-      public void run() {
-        if (ct != null && ct.isCancellationRequested()) {
-          tcs.setCancelled();
-          return;
-        }
+    try {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          if (ct != null && ct.isCancellationRequested()) {
+            tcs.setCancelled();
+            return;
+          }
 
-        try {
-          tcs.setResult(callable.call());
-        } catch (CancellationException e) {
-          tcs.setCancelled();
-        } catch (Exception e) {
-          tcs.setError(e);
+          try {
+            tcs.setResult(callable.call());
+          } catch (CancellationException e) {
+            tcs.setCancelled();
+          } catch (Exception e) {
+            tcs.setError(e);
+          }
         }
-      }
-    });
+      });
+    } catch (Exception e) {
+      tcs.setError(new ExecutorException(e));
+    }
+
     return tcs.getTask();
   }
 
@@ -800,24 +805,28 @@ public class Task<TResult> {
       final bolts.TaskCompletionSource<TContinuationResult> tcs,
       final Continuation<TResult, TContinuationResult> continuation, final Task<TResult> task,
       Executor executor, final CancellationToken ct) {
-    executor.execute(new Runnable() {
-      @Override
-      public void run() {
-        if (ct != null && ct.isCancellationRequested()) {
-          tcs.setCancelled();
-          return;
-        }
+    try {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          if (ct != null && ct.isCancellationRequested()) {
+            tcs.setCancelled();
+            return;
+          }
 
-        try {
-          TContinuationResult result = continuation.then(task);
-          tcs.setResult(result);
-        } catch (CancellationException e) {
-          tcs.setCancelled();
-        } catch (Exception e) {
-          tcs.setError(e);
+          try {
+            TContinuationResult result = continuation.then(task);
+            tcs.setResult(result);
+          } catch (CancellationException e) {
+            tcs.setCancelled();
+          } catch (Exception e) {
+            tcs.setError(e);
+          }
         }
-      }
-    });
+      });
+    } catch (Exception e) {
+      tcs.setError(new ExecutorException(e));
+    }
   }
 
   /**
@@ -841,45 +850,49 @@ public class Task<TResult> {
       final Continuation<TResult, Task<TContinuationResult>> continuation,
       final Task<TResult> task, final Executor executor,
       final CancellationToken ct) {
-    executor.execute(new Runnable() {
-      @Override
-      public void run() {
-        if (ct != null && ct.isCancellationRequested()) {
-          tcs.setCancelled();
-          return;
-        }
+    try {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          if (ct != null && ct.isCancellationRequested()) {
+            tcs.setCancelled();
+            return;
+          }
 
-        try {
-          Task<TContinuationResult> result = continuation.then(task);
-          if (result == null) {
-            tcs.setResult(null);
-          } else {
-            result.continueWith(new Continuation<TContinuationResult, Void>() {
-              @Override
-              public Void then(Task<TContinuationResult> task) {
-                if (ct != null && ct.isCancellationRequested()) {
-                  tcs.setCancelled();
+          try {
+            Task<TContinuationResult> result = continuation.then(task);
+            if (result == null) {
+              tcs.setResult(null);
+            } else {
+              result.continueWith(new Continuation<TContinuationResult, Void>() {
+                @Override
+                public Void then(Task<TContinuationResult> task) {
+                  if (ct != null && ct.isCancellationRequested()) {
+                    tcs.setCancelled();
+                    return null;
+                  }
+
+                  if (task.isCancelled()) {
+                    tcs.setCancelled();
+                  } else if (task.isFaulted()) {
+                    tcs.setError(task.getError());
+                  } else {
+                    tcs.setResult(task.getResult());
+                  }
                   return null;
                 }
-
-                if (task.isCancelled()) {
-                  tcs.setCancelled();
-                } else if (task.isFaulted()) {
-                  tcs.setError(task.getError());
-                } else {
-                  tcs.setResult(task.getResult());
-                }
-                return null;
-              }
-            });
+              });
+            }
+          } catch (CancellationException e) {
+            tcs.setCancelled();
+          } catch (Exception e) {
+            tcs.setError(e);
           }
-        } catch (CancellationException e) {
-          tcs.setCancelled();
-        } catch (Exception e) {
-          tcs.setError(e);
         }
-      }
-    });
+      });
+    } catch (Exception e) {
+      tcs.setError(new ExecutorException(e));
+    }
   }
 
   private void runContinuations() {
