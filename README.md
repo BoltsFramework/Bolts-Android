@@ -33,17 +33,17 @@ Snapshots of the development version are available in [Sonatype's `snapshots` re
 
 # Tasks
 
-To build a truly responsive Android application, you must keep long-running operations off of the UI thread, and be careful to avoid blocking anything the UI thread might be waiting on. This means you will need to execute various operations in the background. To make this easier, we've added a class called `Task`. A task represents an asynchronous operation. Typically, a `Task` is returned from an asynchronous function and gives the ability to continue processing the result of the task. When a task is returned from a function, it's already begun doing its job. A task is not tied to a particular threading model: it represents the work being done, not where it is executing. Tasks have many advantages over other methods of asynchronous programming, such as callbacks and `AsyncTask`.
-* They consume fewer system resources, since they don't occupy a thread while waiting on other tasks.
-* Performing several tasks in a row will not create nested "pyramid" code as you would get when using only callbacks.
-* Tasks are fully composable, allowing you to perform branching, parallelism, and complex error handling, without the spaghetti code of having many named callbacks.
+To build a truly responsive Android application, you must keep long-running operations off of the UI thread, and be careful to avoid blocking anything the UI thread might be waiting on. This means you will need to execute various operations in the background. To make this easier, we've added a class called `Task`. A `Task` represents an asynchronous operation. Typically, a `Task` is returned from an asynchronous function and gives the ability to continue processing the result of the task. When a `Task` is returned from a function, it's already begun doing its job. A `Task` is not tied to a particular threading model: it represents the work being done, not where it is executing. `Task`s have many advantages over other methods of asynchronous programming, such as callbacks and `AsyncTask`.
+* They consume fewer system resources, since they don't occupy a thread while waiting on other `Task`s.
+* Performing several `Task`s in a row will not create nested "pyramid" code as you would get when using only callbacks.
+* `Task`s are fully composable, allowing you to perform branching, parallelism, and complex error handling, without the spaghetti code of having many named callbacks.
 * You can arrange task-based code in the order that it executes, rather than having to split your logic across scattered callback functions.
 
 For the examples in this doc, assume there are async versions of some common Parse methods, called `saveAsync` and `findAsync` which return a `Task`. In a later section, we'll show how to define these functions yourself.
 
 ## The `continueWith` Method
 
-Every `Task` has a method named `continueWith` which takes a `Continuation`. A continuation is an interface that you implement which has one method, named `then`. The `then` method is called when the task is complete. You can then inspect the task to check if it was successful and to get its result.
+Every `Task` has a method named `continueWith` which takes a `Continuation`. A continuation is an interface that you implement which has one method, named `then`. The `then` method is called when the `Task` is complete. You can then inspect the `Task` to check if it was successful and to get its result.
 
 ```java
 saveAsync(obj).continueWith(new Continuation<ParseObject, Void>() {
@@ -62,7 +62,7 @@ saveAsync(obj).continueWith(new Continuation<ParseObject, Void>() {
 });
 ```
 
-Tasks are strongly-typed using Java Generics, so getting the syntax right can be a little tricky at first. Let's look closer at the types involved with an example.
+`Task`s are strongly-typed using Java Generics, so getting the syntax right can be a little tricky at first. Let's look closer at the types involved with an example.
 
 ```java
 /**
@@ -85,7 +85,7 @@ public Task<String> getStringAsync() {
 }
 ```
 
-In many cases, you only want to do more work if the previous task was successful, and propagate any errors or cancellations to be dealt with later. To do this, use the `onSuccess` method instead of `continueWith`.
+In many cases, you only want to do more work if the previous `Task` was successful, and propagate any errors or cancellations to be dealt with later. To do this, use the `onSuccess` method instead of `continueWith`.
 
 ```java
 saveAsync(obj).onSuccess(new Continuation<ParseObject, Void>() {
@@ -98,7 +98,7 @@ saveAsync(obj).onSuccess(new Continuation<ParseObject, Void>() {
 
 ## Chaining Tasks Together
 
-Tasks are a little bit magical, in that they let you chain them without nesting. If you use `continueWithTask` instead of `continueWith`, then you can return a new task. The task returned by `continueWithTask` will not be considered finished until the new task returned from within `continueWithTask` is. This lets you perform multiple actions without incurring the pyramid code you would get with callbacks. Likewise, `onSuccessTask` is a version of `onSuccess` that returns a new task. So, use `continueWith`/`onSuccess` to do more synchronous work, or `continueWithTask`/`onSuccessTask` to do more asynchronous work.
+`Task`s are a little bit magical, in that they let you chain them without nesting. If you use `continueWithTask` instead of `continueWith`, then you can return a new task. The `Task` returned by `continueWithTask` will not be considered complete until the new `Task` returned from within `continueWithTask` is. This lets you perform multiple actions without incurring the pyramid code you would get with callbacks. Likewise, `onSuccessTask` is a version of `onSuccess` that returns a new task. So, use `continueWith`/`onSuccess` to do more synchronous work, or `continueWithTask`/`onSuccessTask` to do more asynchronous work.
 
 ```java
 final ParseQuery<ParseObject> query = ParseQuery.getQuery("Student");
@@ -130,7 +130,7 @@ findAsync(query).onSuccessTask(new Continuation<List<ParseObject>, Task<ParseObj
 
 ## Error Handling
 
-By carefully choosing whether to call `continueWith` or `onSuccess`, you can control how errors are propagated in your application. Using `continueWith` lets you handle errors by transforming them or dealing with them. You can think of failed tasks kind of like throwing an exception. In fact, if you throw an exception inside a continuation, the resulting task will be faulted with that exception.
+By carefully choosing whether to call `continueWith` or `onSuccess`, you can control how errors are propagated in your application. Using `continueWith` lets you handle errors by transforming them or dealing with them. You can think of failed `Task`s kind of like throwing an exception. In fact, if you throw an exception inside a continuation, the resulting `Task` will be faulted with that exception.
 
 ```java
 final ParseQuery<ParseObject> query = ParseQuery.getQuery("Student");
@@ -176,7 +176,7 @@ It's often convenient to have a long chain of success callbacks with only one er
 
 ## Creating Tasks
 
-When you're getting started, you can just use the tasks returned from methods like `findAsync` or `saveAsync`. However, for more advanced scenarios, you may want to make your own tasks. To do that, you create a `TaskCompletionSource`. This object will let you create a new Task, and control whether it gets marked as finished or cancelled. After you create a `Task`, you'll need to call `setResult`, `setError`, or `setCancelled` to trigger its continuations.
+When you're getting started, you can just use the `Task`s returned from methods like `findAsync` or `saveAsync`. However, for more advanced scenarios, you may want to make your own `Task`s. To do that, you create a `TaskCompletionSource`. This object will let you create a new `Task` and control whether it gets marked as completed or cancelled. After you create a `Task`, you'll need to call `setResult`, `setError`, or `setCancelled` to trigger its continuations.
 
 ```java
 public Task<String> succeedAsync() {
@@ -194,7 +194,7 @@ public Task<String> failAsync() {
 }
 ```
 
-If you know the result of a task at the time it is created, there are some convenience methods you can use.
+If you know the result of a `Task` at the time it is created, there are some convenience methods you can use.
 
 ```java
 Task<String> successful = Task.forResult("The good result.");
@@ -204,7 +204,7 @@ Task<String> failed = Task.forError(new RuntimeException("An error message."));
 
 ## Creating Async Methods
 
-With these tools, it's easy to make your own asynchronous functions that return tasks. For example, you can define `fetchAsync` easily.
+With these tools, it's easy to make your own asynchronous functions that return `Task`s. For example, you can define `fetchAsync` easily.
 
 ```java
 public Task<ParseObject> fetchAsync(ParseObject obj) {
@@ -222,7 +222,7 @@ public Task<ParseObject> fetchAsync(ParseObject obj) {
 }
 ```
 
-It's similarly easy to create `saveAsync`, `findAsync` or `deleteAsync`. We've also provided some convenience functions to help you create tasks from straight blocks of code. `callInBackground` runs a task on our background thread pool, while `call` tries to execute its block immediately.
+It's similarly easy to create `saveAsync`, `findAsync` or `deleteAsync`. We've also provided some convenience functions to help you create `Task`s from straight blocks of code. `callInBackground` runs a `Task` on our background thread pool, while `call` tries to execute its block immediately.
 
 ```java
 Task.callInBackground(new Callable<Void>() {
@@ -234,7 +234,7 @@ Task.callInBackground(new Callable<Void>() {
 
 ## Tasks in Series
 
-Tasks are convenient when you want to do a series of tasks in a row, each one waiting for the previous to finish. For example, imagine you want to delete all of the comments on your blog.
+`Task`s are convenient when you want to do a series of asynchronous operations in a row, each one waiting for the previous to finish. For example, imagine you want to delete all of the comments on your blog.
 
 ```java
 ParseQuery<ParseObject> query = ParseQuery.getQuery("Comments");
@@ -265,7 +265,7 @@ findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Task<Void>
 
 ## Tasks in Parallel
 
-You can also perform several tasks in parallel, using the `whenAll` method. You can start multiple operations at once, and use `Task.whenAll` to create a new task that will be marked as completed when all of its input tasks are completed. The new task will be successful only if all of the passed-in tasks succeed. Performing operations in parallel will be faster than doing them serially, but may consume more system resources and bandwidth.
+You can also perform several `Task`s in parallel, using the `whenAll` method. You can start multiple operations at once and use `Task.whenAll` to create a new `Task` that will be marked as completed when all of its input `Task`s are finished. The new `Task` will be successful only if all of the passed-in `Task`s succeed. Performing operations in parallel will be faster than doing them serially, but may consume more system resources and bandwidth.
     
 ```java
 ParseQuery<ParseObject> query = ParseQuery.getQuery("Comments");
@@ -373,7 +373,7 @@ saveAsync(obj1).onSuccessTask(new Continuation<ParseObject, Task<ParseObject>>()
 
 ## Cancelling Tasks
 
-To cancel a task create a `CancellationTokenSource` and pass the corresponding token to any methods that create a task you want to cancel, then call `cancel()` on the source. This will cancel any ongoing tasks that the token was supplied to.
+To cancel a `Task` create a `CancellationTokenSource` and pass the corresponding token to any methods that create a `Task` you want to cancel, then call `cancel()` on the source. This will cancel any ongoing `Task`s that the token was supplied to.
 
 
 ```java
