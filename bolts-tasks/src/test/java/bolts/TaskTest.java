@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -1056,6 +1057,91 @@ public class TaskTest {
             return null;
           }
         });
+      }
+    });
+  }
+
+  @Test
+  public void testCallWithBadExecutor() {
+    final RuntimeException exception = new RuntimeException("BAD EXECUTORS");
+
+    Task.call(new Callable<Integer>() {
+      public Integer call() throws Exception {
+        return 1;
+      }
+    }, new Executor() {
+      @Override
+      public void execute(Runnable command) {
+        throw exception;
+      }
+    }).continueWith(new Continuation<Integer, Object>() {
+      @Override
+      public Object then(Task<Integer> task) throws Exception {
+        assertTrue(task.isFaulted());
+        assertTrue(task.getError() instanceof ExecutorException);
+        assertEquals(exception, task.getError().getCause());
+
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void testContinueWithBadExecutor() {
+    final RuntimeException exception = new RuntimeException("BAD EXECUTORS");
+
+    Task.call(new Callable<Integer>() {
+      public Integer call() throws Exception {
+        return 1;
+      }
+    }).continueWith(new Continuation<Integer, Integer>() {
+      @Override
+      public Integer then(Task<Integer> task) throws Exception {
+        return task.getResult();
+      }
+    }, new Executor() {
+      @Override
+      public void execute(Runnable command) {
+        throw exception;
+      }
+    }).continueWith(new Continuation<Integer, Object>() {
+      @Override
+      public Object then(Task<Integer> task) throws Exception {
+        assertTrue(task.isFaulted());
+        assertTrue(task.getError() instanceof ExecutorException);
+        assertEquals(exception, task.getError().getCause());
+
+        return null;
+      }
+    });
+  }
+
+  @Test
+  public void testContinueWithTaskAndBadExecutor() {
+    final RuntimeException exception = new RuntimeException("BAD EXECUTORS");
+
+    Task.call(new Callable<Integer>() {
+      public Integer call() throws Exception {
+        return 1;
+      }
+    }).continueWithTask(new Continuation<Integer, Task<Integer>>() {
+      @Override
+      public Task<Integer> then(Task<Integer> task) throws Exception {
+        return task;
+      }
+    }, new Executor() {
+      @Override
+      public void execute(Runnable command) {
+        throw exception;
+      }
+    }).continueWith(new Continuation<Integer, Object>() {
+      @Override
+      public Object then(Task<Integer> task) throws Exception {
+        assertTrue(task.isFaulted());
+        assertTrue(task.getError() instanceof ExecutorException);
+        assertEquals(exception, task.getError().getCause());
+
+        return null;
       }
     });
   }
