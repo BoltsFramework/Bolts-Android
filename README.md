@@ -17,7 +17,7 @@ Bolts includes:
 * "Tasks", which make organization of complex asynchronous code more manageable. A task is kind of like a JavaScript Promise, but available for iOS and Android.
 * An implementation of the [App Links protocol](http://www.applinks.org), helping you link to content in other apps and handle incoming deep-links.
 
-For more information, see the [Bolts Android API Reference](http://boltsframework.github.io/docs/android/).
+For more information, see the [Bolts Android API Reference](http://boltsframework.github.io/Bolts-Android/).
 
 ## Download
 Download [the latest JAR][latest] or define in Gradle:
