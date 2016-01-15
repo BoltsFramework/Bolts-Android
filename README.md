@@ -24,8 +24,8 @@ Download [the latest JAR][latest] or define in Gradle:
 
 ```groovy
 dependencies {
-  compile 'com.parse.bolts:bolts-tasks:1.3.0'
-  compile 'com.parse.bolts:bolts-applinks:1.3.0'
+  compile 'com.parse.bolts:bolts-tasks:1.4.0'
+  compile 'com.parse.bolts:bolts-applinks:1.4.0'
 }
 ```
 
