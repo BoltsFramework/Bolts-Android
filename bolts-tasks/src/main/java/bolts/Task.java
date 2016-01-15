@@ -48,11 +48,11 @@ public class Task<TResult> {
   public static final Executor UI_THREAD_EXECUTOR = AndroidExecutors.uiThread();
 
   /**
-   * Interface for handlers invoked when a failed <tt>Task</tt> is about to be
+   * Interface for handlers invoked when a failed {@code Task} is about to be
    * finalized, but the exception has not been consumed.
    *
    * <p>The handler will execute in the GC thread, so if the handler needs to do
-   * anything time consuming or complex it is a good idea to fire off a Task
+   * anything time consuming or complex it is a good idea to fire off a {@code Task}
    * to handle the exception.
    *
    * @see #getUnobservedExceptionHandler
@@ -73,7 +73,7 @@ public class Task<TResult> {
 
   /**
    * Returns the handler invoked when a task has an unobserved
-   * exception or null.
+   * exception or {@code null}.
    */
   public static UnobservedExceptionHandler getUnobservedExceptionHandler() {
     return unobservedExceptionHandler;
@@ -186,7 +186,7 @@ public class Task<TResult> {
 
   /**
    * Blocks until the task is complete or times out.
-   * @return {@code true} if the task completed (has a result, an error, or was cancelled.
+   * @return {@code true} if the task completed (has a result, an error, or was cancelled).
    *         {@code false} otherwise.
    */
   public boolean waitForCompletion(long duration, TimeUnit timeUnit) throws InterruptedException {
