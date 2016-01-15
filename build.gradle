@@ -22,3 +22,24 @@ ext {
     minSdkVersion = 8
     targetSdkVersion = 23
 }
+
+task aggregateJavadocs(type: Javadoc) {
+    destinationDir = file("$buildDir/docs/javadoc")
+}
+
+subprojects {
+    afterEvaluate {
+        if (plugins.hasPlugin(JavaPlugin)) {
+            rootProject.tasks.aggregateJavadocs {
+                source += javadoc.source
+                classpath += files(javadoc.classpath)
+            }
+        }
+        if (plugins.hasPlugin(com.android.build.gradle.LibraryPlugin)) {
+            rootProject.tasks.aggregateJavadocs {
+                source += files(android.sourceSets.main.java.srcDirs)
+                classpath += files(project.files(android.getBootClasspath().join(File.pathSeparator)))
+            }
+        }
+    }
+}
