@@ -575,7 +575,7 @@ App Links Measurement Events sends additional information from App Links Intents
 
  [build-status-svg]: http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat
  [build-status-link]: https://travis-ci.org/BoltsFramework/Bolts-Android
- [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github?style=flat
+ [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github
  [coverage-status-link]: https://coveralls.io/github/BoltsFramework/Bolts-Android?branch=master
  [maven-tasks-svg]: https://img.shields.io/maven-central/v/com.parse.bolts/bolts-tasks.svg?label=bolts-tasks&style=flat
  [maven-tasks-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-tasks
