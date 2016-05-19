@@ -1020,6 +1020,12 @@ public class Task<TResult> {
     }
   }
 
+  /**
+   * creates an Rx Observable or Rx Completable from a Parse Task
+   *
+   * @param isNullable if the task is nullable this will get used to generate an {@link Completable}
+   * @return {@link Observable<TResult>}
+     */
   private Observable<TResult> asObservable(boolean isNullable) {
     return Observable.defer(new Func0<Observable<TResult>>() {
       @Override
@@ -1050,10 +1056,20 @@ public class Task<TResult> {
     });
   }
 
+  /**
+   * creates an Rx Observable from a Parse Task
+   *
+   * @return {@link Observable<TResult>}
+   */
   public Observable<TResult> asObservable() {
     return asObservable(false);
   }
 
+  /**
+   * creates an Rx Completable from a Parse Task
+   *
+   * @return {@link Completable}
+   */
   public Completable asCompletable() {
     return asObservable(true).toCompletable();
   }
