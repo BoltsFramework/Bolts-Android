@@ -50,15 +50,19 @@ import java.util.concurrent.TimeUnit;
    * Moto X: Dual-Core
    *
    * AsyncTask:
-   *   CORE_POOL_SIZE = CPU_COUNT + 1
+   *   CORE_POOL_SIZE = Math.max(2, Math.min(CPU_COUNT - 1, 4))
    *   MAX_POOL_SIZE = CPU_COUNT * 2 + 1
    *
    * https://github.com/android/platform_frameworks_base/commit/719c44e03b97e850a46136ba336d729f5fbd1f47
+   * https://github.com/android/platform_frameworks_base/commit/2b0ebb3d5d101895ebdcd394c53025391c360763
    */
   private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-  /* package */ static final int CORE_POOL_SIZE = CPU_COUNT + 1;
+  // We want at least 2 threads and at most 4 threads in the core pool,
+  // preferring to have 1 less than the CPU count to avoid saturating
+  // the CPU with background work
+  /* package */ static final int CORE_POOL_SIZE = Math.max(2, Math.min(CPU_COUNT - 1, 4));
   /* package */ static final int MAX_POOL_SIZE = CPU_COUNT * 2 + 1;
-  /* package */ static final long KEEP_ALIVE_TIME = 1L;
+  /* package */ static final int KEEP_ALIVE_SECONDS = 30;
 
   /**
    * Creates a proper Cached Thread Pool. Tasks will reuse cached threads if available
@@ -74,7 +78,7 @@ import java.util.concurrent.TimeUnit;
     ThreadPoolExecutor executor =  new ThreadPoolExecutor(
         CORE_POOL_SIZE,
         MAX_POOL_SIZE,
-        KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+        KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
         new LinkedBlockingQueue<Runnable>());
 
     allowCoreThreadTimeout(executor, true);
@@ -97,7 +101,7 @@ import java.util.concurrent.TimeUnit;
     ThreadPoolExecutor executor =  new ThreadPoolExecutor(
             CORE_POOL_SIZE,
             MAX_POOL_SIZE,
-            KEEP_ALIVE_TIME, TimeUnit.SECONDS,
+        KEEP_ALIVE_SECONDS, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>(),
             threadFactory);
 
