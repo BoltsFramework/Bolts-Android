@@ -173,4 +173,19 @@ public class CancellationTest {
     assertNull(result1.get());
     assertNotNull(result2.get());
   }
+
+  @Test
+  public void testCloseCancellationTokenSource() {
+    CancellationTokenSource cts = new CancellationTokenSource();
+    CancellationToken token = cts.getToken();
+
+    token.register(new Runnable() {
+      @Override
+      public void run() {
+        // Do nothing
+      }
+    });
+
+    cts.close();
+  }
 }

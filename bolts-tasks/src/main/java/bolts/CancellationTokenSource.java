@@ -129,10 +129,11 @@ public class CancellationTokenSource implements Closeable {
 
       cancelScheduledCancellation();
 
+      List<CancellationTokenRegistration> registrations = new ArrayList<>(this.registrations);
       for (CancellationTokenRegistration registration : registrations) {
         registration.close();
       }
-      registrations.clear();
+      this.registrations.clear();
       closed = true;
     }
   }
