@@ -1,4 +1,4 @@
-apply plugin: 'java'
+apply plugin: 'com.android.library'
 
 group = GROUP_NAME
 version = VERSION_NAME
@@ -7,6 +7,15 @@ configurations {
     provided
 }
 
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+}
 sourceSets {
     main {
         compileClasspath += configurations.provided
@@ -14,8 +23,6 @@ sourceSets {
 }
 
 dependencies {
-    provided 'com.google.android:android:4.1.1.4'
-
     testCompile 'junit:junit:4.12'
 }
 
@@ -74,40 +81,6 @@ uploadArchives {
 signing {
     required { !isSnapshot && gradle.taskGraph.hasTask("uploadArchives") }
     sign configurations.archives
-}
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allJava
-}
-
-task javadocJar (type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
-
-//endregion
-
-//region Code Coverage
-
-apply plugin: 'jacoco'
-
-jacoco {
-    toolVersion = '0.7.1.201405082137'
-}
-
-jacocoTestReport {
-    group = "Reporting"
-    description = "Generate Jacoco coverage reports after running tests."
-    reports {
-        xml.enabled true
-        html.enabled true
-    }
 }
 
 //endregion
