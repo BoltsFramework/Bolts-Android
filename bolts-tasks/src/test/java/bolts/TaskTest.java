@@ -1008,6 +1008,82 @@ public class TaskTest {
   }
 
   @Test
+  public void testContinueWhileTask() {
+    final AtomicInteger count = new AtomicInteger(0);
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<?> call() throws Exception {
+        return Task.forResult(null).continueWhile(new Callable<Boolean>() {
+          public Boolean call() throws Exception {
+            return count.get() < 10;
+          }
+        }, new Continuation<Void, Task<Void>>() {
+          public Task<Void> then(Task<Void> task) throws Exception {
+            count.incrementAndGet();
+            return Task.<Void>forResult(null);
+          }
+        }).continueWith(new Continuation<Void, Void>() {
+          public Void then(Task<Void> task) throws Exception {
+            assertEquals(10, count.get());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  @Test
+  public void testContinueWhileTaskCancelledParent() {
+    final AtomicInteger count = new AtomicInteger(0);
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<?> call() throws Exception {
+        return Task.cancelled().continueWhile(new Callable<Boolean>() {
+          public Boolean call() throws Exception {
+            return count.get() < 10;
+          }
+        }, new Continuation<Void, Task<Void>>() {
+          public Task<Void> then(Task<Void> task) throws Exception {
+            count.incrementAndGet();
+            return Task.<Void>forResult(null);
+          }
+        }).continueWith(new Continuation<Void, Void>() {
+          public Void then(Task<Void> task) throws Exception {
+            assertEquals(0, count.get());
+            assertTrue(task.isCancelled());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+  @Test
+  public void testContinueWhileTaskFailedParent() {
+    final AtomicInteger count = new AtomicInteger(0);
+    final Exception exception = new Exception();
+    runTaskTest(new Callable<Task<?>>() {
+      public Task<?> call() throws Exception {
+        return Task.forError(exception).continueWhile(new Callable<Boolean>() {
+          public Boolean call() throws Exception {
+            return count.get() < 10;
+          }
+        }, new Continuation<Void, Task<Void>>() {
+          public Task<Void> then(Task<Void> task) throws Exception {
+            count.incrementAndGet();
+            return Task.<Void>forResult(null);
+          }
+        }).continueWith(new Continuation<Void, Void>() {
+          public Void then(Task<Void> task) throws Exception {
+            assertEquals(0, count.get());
+            assertEquals(exception, task.getError());
+            return null;
+          }
+        });
+      }
+    });
+  }
+
+
+  @Test
   public void testContinueWhileAsync() {
     final AtomicInteger count = new AtomicInteger(0);
     runTaskTest(new Callable<Task<?>>() {
