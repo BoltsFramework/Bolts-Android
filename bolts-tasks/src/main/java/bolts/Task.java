@@ -1,11 +1,8 @@
 /*
- *  Copyright (c) 2014, Facebook, Inc.
- *  All rights reserved.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the BSD-style license found in the
- *  LICENSE file in the root directory of this source tree. An additional grant 
- *  of patent rights can be found in the PATENTS file in the same directory.
- *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 package bolts;
 
@@ -25,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents the result of an asynchronous operation.
- * 
+ *
  * @param <TResult>
  *          The type of the result of the task.
  */
@@ -395,7 +392,7 @@ public class Task<TResult> {
    *
    * @param tasks
    *          The tasks to wait on for completion.
-   * @return A task that represents the completion of one of the supplied tasks. 
+   * @return A task that represents the completion of one of the supplied tasks.
    *         The return task's result is the task that completed.
    */
   public static <TResult> Task<Task<TResult>> whenAnyResult(Collection<? extends Task<TResult>> tasks) {
@@ -431,7 +428,7 @@ public class Task<TResult> {
    *
    * @param tasks
    *          The tasks to wait on for completion.
-   * @return A task that represents the completion of one of the supplied tasks. 
+   * @return A task that represents the completion of one of the supplied tasks.
    *         The return task's Result is the task that completed.
    */
   @SuppressWarnings("unchecked")
@@ -439,10 +436,10 @@ public class Task<TResult> {
     if (tasks.size() == 0) {
       return Task.forResult(null);
     }
-      
+
     final bolts.TaskCompletionSource<Task<?>> firstCompleted = new bolts.TaskCompletionSource<>();
     final AtomicBoolean isAnyTaskComplete = new AtomicBoolean(false);
-      
+
     for (Task<?> task : tasks) {
       ((Task<Object>) task).continueWith(new Continuation<Object, Void>() {
         @Override

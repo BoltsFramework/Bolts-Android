@@ -1,11 +1,8 @@
 /*
- *  Copyright (c) 2014, Facebook, Inc.
- *  All rights reserved.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
- *  This source code is licensed under the BSD-style license found in the
- *  LICENSE file in the root directory of this source tree. An additional grant 
- *  of patent rights can be found in the PATENTS file in the same directory.
- *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 package bolts;
 
@@ -447,7 +444,7 @@ public class TaskTest {
     assertFalse(task.isCancelled());
     assertFalse(task.isFaulted());
   }
-    
+
   @Test
   public void testWhenAnyResultFirstSuccess() {
     runTaskTest(new Callable<Task<?>>() {
@@ -481,7 +478,7 @@ public class TaskTest {
       }
     });
   }
-    
+
   @Test
   public void testWhenAnyFirstSuccess() {
     runTaskTest(new Callable<Task<?>>() {
@@ -599,7 +596,7 @@ public class TaskTest {
             throw new CancellationException();
           }
         });
-         
+
         tasks.addAll(launchTasksWithRandomCompletions(5));
         tasks.add(firstToCompleteCancelled);
         tasks.addAll(launchTasksWithRandomCompletions(5));
@@ -619,7 +616,7 @@ public class TaskTest {
       }
     });
   }
-    
+
   @Test
   public void testWhenAnyFirstCancelled() {
     runTaskTest(new Callable<Task<?>>() {
@@ -654,10 +651,10 @@ public class TaskTest {
   }
 
   /**
-   * Launches a given number of tasks (of Integer) that will complete either in a completed, 
+   * Launches a given number of tasks (of Integer) that will complete either in a completed,
    * cancelled or faulted state (random distribution).
    * Each task will reach completion after a somehow random delay (between 500 and 600 ms).
-   * Each task reaching a success completion state will have its result set to a random Integer 
+   * Each task reaching a success completion state will have its result set to a random Integer
    * (between 0 to 1000).
    * @param numberOfTasksToLaunch The number of tasks to launch
    * @return A collection containing all the tasks that have been launched
