@@ -573,6 +573,9 @@ App Links Measurement Events sends additional information from App Links Intents
   * `type`: `“app”` for open in app, `“web”` for open in browser; `“fail”` when the success field is `“0”`.
   * `version`: App Links API version.
 
+## License
+Bolts-Android is MIT licensed, as found in the LICENSE file.
+
  [build-status-svg]: http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat
  [build-status-link]: https://travis-ci.org/BoltsFramework/Bolts-Android
  [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github
