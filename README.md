@@ -264,7 +264,7 @@ findAsync(query).continueWithTask(new Continuation<List<ParseObject>, Task<Void>
 ## Tasks in Parallel
 
 You can also perform several `Task`s in parallel, using the `whenAll` method. You can start multiple operations at once and use `Task.whenAll` to create a new `Task` that will be marked as completed when all of its input `Task`s are finished. The new `Task` will be successful only if all of the passed-in `Task`s succeed. Performing operations in parallel will be faster than doing them serially, but may consume more system resources and bandwidth.
-    
+
 ```java
 ParseQuery<ParseObject> query = ParseQuery.getQuery("Comments");
 query.whereEqualTo("post", 123);
@@ -448,7 +448,7 @@ protected void onCreate(Bundle savedInstanceState) {
     // you can get them from AppLinkData.
     Bundle applinkData = AppLinks.getAppLinkData(getIntent());
     String id = applinkData.getString("id");
-    
+
     // You can also get referrer data from AppLinkData
     Bundle referrerAppData = applinkData.getBundle("referer_app_link");
 
@@ -573,6 +573,9 @@ App Links Measurement Events sends additional information from App Links Intents
   * `type`: `“app”` for open in app, `“web”` for open in browser; `“fail”` when the success field is `“0”`.
   * `version`: App Links API version.
 
+## License
+Bolts-Android is MIT licensed, as found in the LICENSE file.
+
  [build-status-svg]: http://img.shields.io/travis/BoltsFramework/Bolts-Android/master.svg?style=flat
  [build-status-link]: https://travis-ci.org/BoltsFramework/Bolts-Android
  [coverage-status-svg]: https://coveralls.io/repos/BoltsFramework/Bolts-Android/badge.svg?branch=master&service=github
@@ -581,7 +584,7 @@ App Links Measurement Events sends additional information from App Links Intents
  [maven-tasks-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-tasks
  [maven-applinks-svg]: https://img.shields.io/maven-central/v/com.parse.bolts/bolts-applinks.svg?label=bolts-applinks&style=flat
  [maven-applinks-link]: https://maven-badges.herokuapp.com/maven-central/com.parse.bolts/bolts-applinks
- [license-svg]: https://img.shields.io/badge/license-BSD-lightgrey.svg?style=flat
+ [license-svg]: https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat
  [license-link]: https://github.com/BoltsFramework/Bolts-Android/blob/master/LICENSE
 
  [latest]: https://search.maven.org/remote_content?g=com.parse.bolts&a=bolts-tasks&v=LATEST

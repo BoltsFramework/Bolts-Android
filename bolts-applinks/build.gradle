@@ -92,7 +92,7 @@ uploadArchives {
 
             licenses {
                 license {
-                    name 'BSD License'
+                    name 'MIT License'
                     url 'https://github.com/BoltsFramework/Bolts-Android/blob/master/LICENSE'
                     distribution 'repo'
                 }
