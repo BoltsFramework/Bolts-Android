@@ -19,6 +19,8 @@ Bolts includes:
 
 For more information, see the [Bolts Android API Reference](http://boltsframework.github.io/Bolts-Android/).
 
+[中文文档](README_CN.md)
+
 ## Download
 Download [the latest JAR][latest] or define in Gradle:
 
