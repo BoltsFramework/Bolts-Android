@@ -20,6 +20,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import rx.Completable;
+import rx.Observable;
+import rx.Subscriber;
+import rx.functions.Func0;
+
 /**
  * Represents the result of an asynchronous operation.
  *
@@ -1010,6 +1015,60 @@ public class Task<TResult> {
         unobservedErrorNotifier = new UnobservedErrorNotifier(this);
       return true;
     }
+  }
+
+  /**
+   * creates an Rx Observable or Rx Completable from a Parse Task
+   *
+   * @param isNullable if the task is nullable this will get used to generate an {@link Completable}
+   * @return {@link Observable<TResult>}
+     */
+  private Observable<TResult> asObservable(boolean isNullable) {
+    return Observable.defer(new Func0<Observable<TResult>>() {
+      @Override
+      public Observable<TResult> call() {
+        return Observable.create(new Observable.OnSubscribe<TResult>() {
+          @Override
+          public void call(Subscriber<? super TResult> subscriber) {
+            continueWith(new Continuation<TResult, Object>() {
+              @Override
+              public Object then(Task<TResult> task) throws Exception {
+                if (task.isCancelled()) {
+//                   NOTICE: doOnUnsubscribe(() -> Observable.just(query) in outside
+              subscriber.unsubscribe(); //sub.onCompleted();?
+            } else if (task.isFaulted()) {
+              Throwable error = task.getError();
+              subscriber.onError(error);
+            } else {
+              TResult result = task.getResult();
+              if (isNullable || result != null) subscriber.onNext(result);
+              subscriber.onCompleted();
+            }
+            return null;
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * creates an Rx Observable from a Parse Task
+   *
+   * @return {@link Observable<TResult>}
+   */
+  public Observable<TResult> asObservable() {
+    return asObservable(false);
+  }
+
+  /**
+   * creates an Rx Completable from a Parse Task
+   *
+   * @return {@link Completable}
+   */
+  public Completable asCompletable() {
+    return asObservable(true).toCompletable();
   }
 
   /**
