@@ -5,21 +5,21 @@ branches:
 language: android
 sudo: false
 env:
-  matrix:
-    - ANDROID_TARGET=android-22  ANDROID_ABI=default/armeabi-v7a
+  global:
+    - ANDROID_API_LEVEL=28
 
 android:
   components:
-    - build-tools-23.0.1
-    - android-23
-    - android-22
-    - sys-img-armeabi-v7a-$ANDROID_TARGET
+    - build-tools-28.0.3
+    - android-$ANDROID_API_LEVEL
+    - sys-img-x86-android-$ANDROID_API_LEVEL
     - extra-android-support
+    - extra-google-m2repository
     - extra-android-m2repository
 
 before_script:
-  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
-  - emulator -avd test -no-skin -no-audio -no-window &
+  - echo no | android create avd --force -n test -t android-$ANDROID_API_LEVEL --abi x86 -c 100M
+  - emulator -avd test -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
   - adb logcat -v time > logcat.txt &
