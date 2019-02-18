@@ -15,8 +15,7 @@ sourceSets {
 
 dependencies {
     provided 'com.google.android:android:4.1.1.4'
-
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
 //region Maven
@@ -75,6 +74,8 @@ signing {
     required { !isSnapshot && gradle.taskGraph.hasTask("uploadArchives") }
     sign configurations.archives
 }
+
+javadoc.options.addStringOption('Xdoclint:none', '-quiet')
 
 task sourcesJar(type: Jar) {
     classifier = 'sources'
