@@ -1,4 +1,4 @@
-<manifest package="bolts" >
+<manifest package="bolts.android" >
 
     <application>
     </application>

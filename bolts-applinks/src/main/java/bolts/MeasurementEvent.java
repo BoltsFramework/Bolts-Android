@@ -117,7 +117,7 @@ public class MeasurementEvent {
       Log.d(getClass().getName(), "Event name is required");
     }
     try {
-      Class<?> clazz = Class.forName("android.support.v4.content.LocalBroadcastManager");
+      Class<?> clazz = Class.forName("androidx.localbroadcastmanager.content.LocalBroadcastManager");
       Method methodGetInstance = clazz.getMethod("getInstance", Context.class);
       Method methodSendBroadcast = clazz.getMethod("sendBroadcast", Intent.class);
       Object localBroadcastManager = methodGetInstance.invoke(null, appContext);

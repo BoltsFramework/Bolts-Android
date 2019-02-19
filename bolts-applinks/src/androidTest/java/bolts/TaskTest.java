@@ -1,13 +1,17 @@
 package bolts;
 
 import android.os.Looper;
-import android.test.InstrumentationTestCase;
+
+import junit.framework.TestCase;
+
+import org.junit.Test;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 
-public class TaskTest extends InstrumentationTestCase {
+public class TaskTest extends TestCase {
 
+  @Test
   public void testContinueOnUiThread() {
     assertNotSame(Looper.myLooper(), Looper.getMainLooper());
 
@@ -37,6 +41,7 @@ public class TaskTest extends InstrumentationTestCase {
     });
   }
 
+  @Test
   private void runTaskTest(Callable<Task<?>> callable) {
     try {
       Task<?> task = callable.call();

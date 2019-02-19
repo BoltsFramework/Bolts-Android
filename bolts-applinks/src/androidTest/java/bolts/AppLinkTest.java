@@ -6,6 +6,7 @@
  */
 package bolts;
 
+import android.app.Instrumentation;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -13,8 +14,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
-import android.test.InstrumentationTestCase;
+
+import junit.framework.TestCase;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,18 +31,23 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class AppLinkTest extends InstrumentationTestCase {
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+public class AppLinkTest extends TestCase {
 
   private static final String PACKAGE_NAME = "bolts.applinks.test";
 
   private List<Intent> openedIntents;
   private Context activityInterceptor;
+  private Instrumentation instrumentation;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     openedIntents = new ArrayList<>();
-    activityInterceptor = new ContextWrapper(getInstrumentation().getTargetContext()) {
+    instrumentation = InstrumentationRegistry.getInstrumentation();
+    activityInterceptor = new ContextWrapper(instrumentation.getTargetContext()) {
       @Override
       public void startActivity(Intent intent) {
         openedIntents.add(intent);
@@ -81,7 +87,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   private Uri getURLForData(String data) throws IOException {
     File result = File.createTempFile("temp",
             ".html",
-            getInstrumentation().getTargetContext().getCacheDir());
+            instrumentation.getTargetContext().getCacheDir());
     PrintWriter writer = new PrintWriter(result);
     writer.write(data);
     writer.close();
@@ -125,7 +131,7 @@ public class AppLinkTest extends InstrumentationTestCase {
 
     final CountDownLatch lock = new CountDownLatch(1);
     final String[] receivedStrings = new String[5];
-    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(getInstrumentation().getTargetContext());
+    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(instrumentation.getTargetContext());
     manager.registerReceiver(
         new BroadcastReceiver() {
           @Override
@@ -143,8 +149,8 @@ public class AppLinkTest extends InstrumentationTestCase {
         new IntentFilter("com.parse.bolts.measurement_event")
     );
 
-    MeasurementEvent.sendBroadcastEvent(getInstrumentation().getTargetContext(), "myEventName", i, other);
-    lock.await(2000, TimeUnit.MILLISECONDS);
+    MeasurementEvent.sendBroadcastEvent(instrumentation.getTargetContext(), "myEventName", i, other);
+    lock.await(20000, TimeUnit.MILLISECONDS);
 
     assertEquals("myEventName", receivedStrings[0]);
     assertEquals("bar", receivedStrings[1]);
@@ -169,7 +175,7 @@ public class AppLinkTest extends InstrumentationTestCase {
 
     final CountDownLatch lock = new CountDownLatch(1);
     final String[] receivedStrings = new String[7];
-    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(getInstrumentation().getTargetContext());
+    LocalBroadcastManager manager = LocalBroadcastManager.getInstance(instrumentation.getTargetContext());
     manager.registerReceiver(
         new BroadcastReceiver() {
           @Override
@@ -189,8 +195,9 @@ public class AppLinkTest extends InstrumentationTestCase {
         new IntentFilter("com.parse.bolts.measurement_event")
     );
 
-    Uri targetUrl = AppLinks.getTargetUrlFromInboundIntent(getInstrumentation().getTargetContext(), i);
-    lock.await(2000, TimeUnit.MILLISECONDS);
+    Uri targetUrl = AppLinks.getTargetUrlFromInboundIntent(instrumentation.getTargetContext(), i);
+//    lock.await(2000, TimeUnit.MILLISECONDS);
+    lock.await();
 
     assertEquals("al_nav_in", receivedStrings[0]);
     assertEquals("http://www.example2.com", receivedStrings[1]);
@@ -208,7 +215,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:package", "com.bolts",
             "al:android:class", "com.bolts.BoltsActivity");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -224,7 +231,7 @@ public class AppLinkTest extends InstrumentationTestCase {
   }
 
   public void testWebViewAppLinkParsingFailure() throws Exception {
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(Uri.parse("http://badurl"));
     task.waitForCompletion();
     assertNotNull(task.getError());
@@ -238,7 +245,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:class", "com.bolts.BoltsActivity",
             "al:web:should_fallback", "0");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -261,7 +268,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:class", "com.bolts.BoltsActivity",
             "al:web:should_fallback", "fAlse"); // case insensitive
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -284,7 +291,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:class", "com.bolts.BoltsActivity",
             "al:web:url", "http://www.example.com");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -312,7 +319,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:package", "com.bolts2",
             "al:android:class", "com.bolts.BoltsActivity2");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -337,7 +344,7 @@ public class AppLinkTest extends InstrumentationTestCase {
     String html = getHtmlWithMetaTags("al:android:package", "com.bolts",
             "al:android:package", "com.bolts2");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -359,7 +366,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:package", "com.bolts3",
             "al:android:app_name", "Bolts2");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();
@@ -399,7 +406,7 @@ public class AppLinkTest extends InstrumentationTestCase {
             "al:android:package", "com.bolts2",
             "al:android:class", "com.bolts.BoltsActivity2");
     Uri url = getURLForData(html);
-    Task<AppLink> task = new WebViewAppLinkResolver(getInstrumentation().getTargetContext())
+    Task<AppLink> task = new WebViewAppLinkResolver(instrumentation.getTargetContext())
             .getAppLinkFromUrlInBackground(url);
     waitForTask(task);
     AppLink link = task.getResult();

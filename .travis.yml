@@ -4,22 +4,21 @@ branches:
 
 language: android
 sudo: false
-env:
-  matrix:
-    - ANDROID_TARGET=android-22  ANDROID_ABI=default/armeabi-v7a
 
 android:
   components:
-    - build-tools-23.0.1
-    - android-23
+    - build-tools-28.0.3
     - android-22
-    - sys-img-armeabi-v7a-$ANDROID_TARGET
+    - android-28
     - extra-android-support
+    - extra-google-m2repository
     - extra-android-m2repository
+    - sys-img-armeabi-v7a-android-22
 
 before_script:
-  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
-  - emulator -avd test -no-skin -no-audio -no-window &
+  - android list target
+  - echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a
+  - emulator -avd test -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
   - adb logcat -v time > logcat.txt &
@@ -27,16 +26,16 @@ before_script:
 script:
   - ./gradlew build testDebug connectedCheck --continue --info
 
-after_script:
-  - travis_fold:start:logcat
-  - cat logcat.txt
-  - travis_fold:end:logcat
-
-after_success:
-  - ./gradlew jacocoTestReport coveralls
-  - ./scripts/publish_snapshot.sh
-
-cache:
-  directories:
-    - $HOME/.gradle
-    - $HOME/.m2/repository
+# after_script:
+#   - travis_fold:start:logcat
+#   - cat logcat.txt
+#   - travis_fold:end:logcat
+#
+# after_success:
+#   - ./gradlew jacocoTestReport coveralls
+#   - ./scripts/publish_snapshot.sh
+#
+# cache:
+#   directories:
+#     - $HOME/.gradle
+#     - $HOME/.m2/repository
