@@ -26,16 +26,16 @@ before_script:
 script:
   - ./gradlew build testDebug connectedCheck --continue --info
 
-# after_script:
-#   - travis_fold:start:logcat
-#   - cat logcat.txt
-#   - travis_fold:end:logcat
-#
-# after_success:
-#   - ./gradlew jacocoTestReport coveralls
-#   - ./scripts/publish_snapshot.sh
-#
-# cache:
-#   directories:
-#     - $HOME/.gradle
-#     - $HOME/.m2/repository
+after_script:
+  - travis_fold:start:logcat
+  - cat logcat.txt
+  - travis_fold:end:logcat
+
+after_success:
+  - ./gradlew jacocoTestReport coveralls
+  - ./scripts/publish_snapshot.sh
+
+cache:
+  directories:
+    - $HOME/.gradle
+    - $HOME/.m2/repository
