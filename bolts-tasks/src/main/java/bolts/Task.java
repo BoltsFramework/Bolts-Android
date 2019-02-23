@@ -600,26 +600,62 @@ public class Task<TResult> {
    * Continues a task with the equivalent of a Task-based while loop, where the body of the loop is
    * a task continuation.
    */
-  public Task<Void> continueWhile(final Callable<Boolean> predicate,
-      final Continuation<Void, Task<Void>> continuation, final Executor executor,
+  public Task<Void> continueWhile(
+      final Callable<Boolean> predicate,
+      final Continuation<Void, Task<Void>> continuation,
+      final Executor executor,
       final CancellationToken ct) {
-    final Capture<Continuation<Void, Task<Void>>> predicateContinuation =
-        new Capture<>();
-    predicateContinuation.set(new Continuation<Void, Task<Void>>() {
+    return this.onSuccessTask(new Continuation<TResult, Task<Void>>() {
       @Override
-      public Task<Void> then(Task<Void> task) throws Exception {
-        if (ct != null && ct.isCancellationRequested()) {
-          return Task.cancelled();
-        }
+      public Task<Void> then(Task<TResult> task) throws Exception {
+        final bolts.TaskCompletionSource<Void> tcs = new bolts.TaskCompletionSource<>();
 
-        if (predicate.call()) {
-          return Task.<Void> forResult(null).onSuccessTask(continuation, executor)
-              .onSuccessTask(predicateContinuation.get(), executor);
-        }
-        return Task.forResult(null);
+        final Continuation<Void, Void> next = new Continuation<Void, Void>() {
+          @Override
+          public Void then(Task<Void> task) throws Exception {
+            try {
+              if (task.isFaulted()) {
+                tcs.setError(task.getError());
+                return null;
+              }
+              if (task.isCancelled()) {
+                tcs.setCancelled();
+                return null;
+              }
+              if (ct != null && ct.isCancellationRequested()) {
+                tcs.setCancelled();
+                return null;
+              }
+
+              try {
+                if (!predicate.call()) {
+                  tcs.setResult(null);
+                  return null;
+                }
+                final Task<Void> result = continuation.then(task);
+                // Note: for compatability we allow null to continue instead of ending the loop.
+                // if (result == null) {
+                //   tcs.setResult(null);
+                //   return null;
+                // }
+                (result != null ? result : Task.<Void>forResult(null)).continueWith(this, executor);
+              } catch (CancellationException e) {
+                tcs.setCancelled();
+              } catch (Exception e) {
+                tcs.setError(e);
+              }
+            } catch(Exception e) {
+              tcs.setError(new ExecutorException(e));
+            }
+            return null;
+          }
+        };
+
+        next.then(Task.forResult(null));
+
+        return tcs.getTask();
       }
-    });
-    return makeVoid().continueWithTask(predicateContinuation.get(), executor);
+    }, executor, ct);
   }
 
   /**
